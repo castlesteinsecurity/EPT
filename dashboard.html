@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Dashboard</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+/* ==========================================================================
+       PADRONIZAÇÃO DA SIDEBAR & MENUS
+       ========================================================================== */
+    .sidebar {
+      width: 270px;
+      background: var(--sidebar);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .btn-logout {
+      margin-top: auto;
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 16px 18px;
+      font-size: 1rem;
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      transition: .25s;
+      font-family: inherit;
+    }
+    .btn-logout:hover {
+      background: rgba(255, 107, 107, 0.08);
+      color: #ff8585;
+      transform: translateX(4px);
+    }
+    #menuGestao {
+      display: none !important;
+    }
+
+    /* ==========================================================================
+       COMPONENTE: LOBO FRONTAL (CENTRAL DE EXECUÇÃO REPOSICIONADA)
+       ========================================================================== */
+    .lobe-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 35px;
+      min-height: 400px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .lobe-status {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(115, 255, 187, 0.08);
+      border: 1px solid rgba(115, 255, 187, 0.3);
+      color: #73ffbb;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      z-index: 3;
+    }
+    .lobe-status i {
+      animation: boltFlash 1.6s infinite ease-in-out;
+    }
+
+    .lobe-header {
+      position: absolute;
+      top: 35px;
+      left: 35px;
+      z-index: 3;
+      max-width: 320px;
+    }
+
+    .lobe-header h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .lobe-header p {
+      color: var(--text2);
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+
+    /* Diagrama de conexões neurais (SVG com caminhos recalculados) */
+    .signal-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .signal-line {
+      fill: none;
+      stroke: rgba(171, 210, 250, 0.15);
+      stroke-width: 2;
+    }
+
+    .signal-pulse {
+      fill: none;
+      stroke: #73ffbb;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 20 600;
+      filter: drop-shadow(0 0 4px rgba(115, 255, 187, 0.8));
+      animation: signalFlow 4s linear infinite;
+    }
+
+    /* Núcleo Centralizadorizado na Esquerda Dinâmica */
+    .brain-core {
+      position: absolute;
+      top: 60%; /* Descido ligeiramente para não colidir com o cabeçalho */
+      left: 20%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .lobe-core-wrap {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      background: rgba(171, 210, 250, 0.05);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(171, 210, 250, 0.03) inset;
+    }
+
+    .lobe-core-wrap::before,
+    .lobe-core-wrap::after {
+      content: '';
+      position: absolute;
+      border: 2px solid rgba(171, 210, 250, 0.3);
+      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      animation: execPulse 2.4s infinite ease-out;
+    }
+
+    .lobe-core-wrap::after {
+      animation-delay: 1.2s;
+    }
+
+    .lobe-core {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      font-size: 2.6rem;
+      line-height: 1;
+      z-index: 2;
+      background: linear-gradient(135deg, #abd2fa, #73ffbb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: coreGlow 3s infinite ease-in-out;
+    }
+
+    .lobe-core::after {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+      border: 2px dashed rgba(115, 255, 187, 0.4);
+      animation: spinExec 6s linear infinite;
+    }
+
+    .brain-label {
+      margin-top: 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #73ffbb;
+    }
+
+    /* Módulos da direita alinhados em Grid/Flex Absoluto */
+    .nodes-container {
+      position: absolute;
+      right: 8%;
+      top: 55%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 24px; /* Espaçamento simétrico e idêntico entre os nós */
+      z-index: 2;
+    }
+
+    .signal-node {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: rgba(171, 210, 250, 0.03);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 140px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: 0.3s;
+    }
+    
+    .signal-node:hover {
+      border-color: rgba(115, 255, 187, 0.4);
+      background: rgba(115, 255, 187, 0.02);
+    }
+
+    .signal-node i {
+      color: #73ffbb;
+      font-size: 0.9rem;
+      width: 16px;
+      text-align: center;
+    }
+
+    /* Animações CSS */
+    @keyframes signalFlow {
+      to { stroke-dashoffset: -620; }
+    }
+
+    @keyframes execPulse {
+      0% { transform: scale(0.9); opacity: 0; }
+      15% { opacity: 0.4; }
+      100% { transform: scale(1.5); opacity: 0; border-color: #73ffbb; }
+    }
+
+    @keyframes coreGlow {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(171, 210, 250, 0.3)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(115, 255, 187, 0.5)); }
+    }
+
+    @keyframes spinExec {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 900px) {
+      .signal-svg, .nodes-container { display: none; }
+      .lobe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: auto; padding: 40px 20px; }
+      .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 30px; }
+      .brain-core { position: relative; top: auto; left: auto; transform: none; }
+    }
+
+    @keyframes boltFlash {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span>Rota Segura</span>
+    </div>
+
+    <nav class="menu">
+      <a href="dashboard.html" class="active">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analytics</span>
+      </a>
+
+      <a href="usuarios.html" id="menuGestao">
+        <i class="fa-solid fa-user-graduate"></i>
+        <span>Gestão de Usuários</span>
+      </a>
+
+      <a href="onibus.html">
+        <i class="fa-solid fa-bus"></i>
+        <span>Ônibus</span>
+      </a>
+
+      <a href="rotas.html">
+        <i class="fa-solid fa-route"></i>
+        <span>Rotas</span>
+      </a>
+
+      <a href="alertas.html">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Alertas</span>
+      </a>
+
+      <a href="mapa.html">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Mapa de Guaíra</span>
+      </a>
+
+      <button id="logoutBtn" class="btn-logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Sair do Sistema</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Desenvolvido por <b>CastlesteinSecurity</b>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <header class="topbar">
+      <div>
+        <h1>Analytics</h1>
+        <p>Visão geral do sistema</p>
+      </div>
+
+      <div class="profile">
+        <div class="profile-text">
+          <span id="Username">Carregando...</span>
+          <small id="UserRole">Verificando...</small>
+        </div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <section class="cards">
+      <div class="card">
+        <div class="card-icon">
+          <i class="fa-solid fa-user-group"></i>
+        </div>
+        <div>
+          <span>Total de Alunos</span>
+          <h2 id="totalAlunosCard">...</h2>
+          <p>Sincronizado</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fa-solid fa-id-card"></i>
+        </div>
+        <div>
+          <span>Motoristas Ativos</span>
+          <h2 id="totalMotoristasCard">...</h2>
+          <p>Sincronizado</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fa-solid fa-bus"></i>
+        </div>
+        <div>
+          <span>Rotas em Curso</span>
+          <h2>--</h2>
+          <p>Sem dados ativos</p>
+        </div>
+      </div>
+
+      <div class="card alert-card">
+        <div class="card-icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <span>Alertas</span>
+          <h2>--</h2>
+          <p>Nenhuma ocorrência</p>
+        </div>
+      </div>
+    </section>
+
+<section class="lobe-container">
+      <div class="lobe-status">
+        <i class="fa-solid fa-bolt"></i> EXECUTANDO
+      </div>
+
+      <div class="lobe-header">
+        <h2>Lobo Frontal Operacional</h2>
+        <p>Núcleo de execução do sistema. Sinais de comando são despachados em tempo real para os módulos da frota.</p>
+      </div>
+
+      <svg class="signal-svg" viewBox="0 0 1000 400" preserveAspectRatio="none">
+        <defs>
+          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115, 255, 187, 0.4)"/>
+          </marker>
+        </defs>
+
+        <path class="signal-line" d="M200,240 C400,160 600,140 800,145" marker-end="url(#signalArrow)"/>
+        <path class="signal-line" d="M200,240 C400,210 600,195 800,195" marker-end="url(#signalArrow)"/>
+        <path class="signal-line" d="M200,240 C400,260 600,250 800,245" marker-end="url(#signalArrow)"/>
+        <path class="signal-line" d="M200,240 C400,310 600,300 800,295" marker-end="url(#signalArrow)"/>
+
+        <path class="signal-pulse" d="M200,240 C400,160 600,140 800,145" style="animation-delay: 0s;"/>
+        <path class="signal-pulse" d="M200,240 C400,210 600,195 800,195" style="animation-delay: 0.6s;"/>
+        <path class="signal-pulse" d="M200,240 C400,260 600,250 800,245" style="animation-delay: 1.2s;"/>
+        <path class="signal-pulse" d="M200,240 C400,310 600,300 800,295" style="animation-delay: 1.8s;"/>
+      </svg>
+
+      <div class="brain-core">
+        <div class="lobe-core-wrap">
+          <i class="fa-solid fa-brain lobe-core"></i>
+        </div>
+        <span class="brain-label">Lobo Frontal</span>
+      </div>
+
+      <div class="nodes-container">
+        <div class="signal-node">
+          <i class="fa-solid fa-bus"></i><span>Ônibus</span>
+        </div>
+        <div class="signal-node">
+          <i class="fa-solid fa-route"></i><span>Rotas</span>
+        </div>
+        <div class="signal-node">
+          <i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span>
+        </div>
+        <div class="signal-node">
+          <i class="fa-solid fa-user-group"></i><span>Usuários</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  (() => {
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkSession() {
+      try {
+        const { data: { user }, error: authError } = await db.auth.getUser();
+
+        if (authError || !user) {
+          window.location.href = "login.html"; 
+          return;
+        }
+
+        const { data: profile } = await db
+          .from('profiles')
+          .select('display_name, role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const userRole = (profile?.role || 'aluno').toLowerCase();
+        const displayName = profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
+
+        document.getElementById('Username').innerText = displayName;
+        
+        const roleLabels = { 
+          administrador: 'Administrador', 
+          motorista: 'Motorista', 
+          aluno: 'Aluno', 
+          responsavel: 'Responsável' 
+        };
+        document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
+
+        if (userRole === 'administrador') {
+          const menuG = document.getElementById('menuGestao');
+          if (menuG) menuG.style.setProperty('display', 'block', 'important');
+        }
+
+        fetchAnalytics();
+
+      } catch (err) {
+        console.error("Erro crítico na sessão:", err);
+        document.getElementById('Username').innerText = "Erro ao carregar";
+      }
+    }
+
+    async function fetchAnalytics() {
+      try {
+        const { count: countAlunos, error: errAlunos } = await db
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'aluno');
+
+        if (!errAlunos && countAlunos !== null) {
+          document.getElementById('totalAlunosCard').innerText = countAlunos;
+        } else {
+          document.getElementById('totalAlunosCard').innerText = '0';
+        }
+
+        const { count: countMotoristas, error: errMotoristas } = await db
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'motorista');
+
+        if (!errMotoristas && countMotoristas !== null) {
+          document.getElementById('totalMotoristasCard').innerText = countMotoristas;
+        } else {
+          document.getElementById('totalMotoristasCard').innerText = '0';
+        }
+
+      } catch (err) {
+        document.getElementById('totalAlunosCard').innerText = '0';
+        document.getElementById('totalMotoristasCard').innerText = '0';
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const { error } = await db.auth.signOut();
+      if (!error) {
+        window.location.href = "login.html";
+      } else {
+        alert("Erro ao tentar sair: " + error.message);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+
+</body>
+</html>

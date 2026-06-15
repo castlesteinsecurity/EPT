@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Central de Alertas</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .alerts-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    /* Painel do Clima e Estresse Térmico */
+    .weather-analysis-card {
+      background: linear-gradient(135deg, #252841, #1a1c30);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .weather-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .weather-main-info h3 { font-size: 2rem; font-weight: 700; margin: 8px 0; }
+    .weather-main-info p { color: var(--text2); font-size: 0.9rem; }
+
+    .thermal-stress-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .efficiency-bar-container {
+      background: #1d2033;
+      border-radius: 10px;
+      height: 12px;
+      width: 100%;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .efficiency-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #73ffbb, #ff6b6b);
+      width: 100%;
+      transition: width 0.5s ease-in-out;
+    }
+
+    /* Lista de Ocorrências Ativas */
+    .alert-item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: .2s;
+      position: relative;
+    }
+
+    .alert-item-card.critico { border-left: 4px solid #ff6b6b; }
+    .alert-item-card.atencao { border-left: 4px solid #f9b17a; }
+
+    .alert-icon-zone {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .critico .alert-icon-zone { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
+    .atencao .alert-icon-zone { background: rgba(249, 177, 122, 0.1); color: #f9b17a; }
+
+    .alert-content-zone { flex: 1; padding-right: 60px; }
+    .alert-content-zone h4 { font-size: 1rem; margin-bottom: 4px; color: #fff; }
+    .alert-content-zone p { font-size: 0.85rem; color: var(--text2); line-height: 1.4; }
+    
+    .alert-meta-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .alert-time-stamp {
+      font-size: 0.75rem;
+      color: var(--text2);
+      background: #1d2033;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .alert-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-alert-action {
+      background: #1d2033;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: .2s;
+    }
+    .btn-alert-action.edit:hover { color: var(--primary); border-color: var(--primary); }
+    .btn-alert-action.delete:hover { color: #ff6b6b; border-color: #ff6b6b; }
+
+    /* Badge de Notificação Dinâmica na Sidebar */
+    .menu-notification-badge {
+      background: #ff6b6b;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 8px;
+      margin-left: auto;
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.4);
+    }
+
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px;
+      font-size: 0.85rem; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 99999;
+      transform: translateY(20px); opacity: 0; transition: transform .25s, opacity .25s; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: #73ffbb; }
+    #toast.success i { color: #73ffbb; }
+    #toast.error { border-color: #ff6b6b; }
+    #toast.error i { color: #ff6b6b; }
+
+    @media(max-width: 1024px) {
+      .alerts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo"><span>Rota Segura</span></div>
+    <nav class="menu">
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html" class="active" id="menuAlertasLink"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+    </nav>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Central de Alertas</h1>
+        <p>Monitoramento climático de Guaíra PR e gerenciamento de estresse mecânico/térmico</p>
+      </div>
+      <div class="profile">
+        <div class="profile-text"><span id="Username">Buscando...</span><small>Administrador</small></div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <div class="alerts-grid">
+      
+      <div class="alerts-list-side">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-bell" style="color: var(--primary); margin-right: 10px;"></i>Eventos Recentes</h2>
+          <button id="btnOpenCreateModal" class="btn-save" style="padding: 8px 16px; font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> Novo Alerta</button>
+        </div>
+
+        <div id="incidentsContainer">
+          </div>
+      </div>
+
+      <div class="weather-side">
+        <div class="weather-analysis-card">
+          <div class="weather-header">
+            <div>
+              <span style="color: var(--primary); font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase;">CONDIÇÃO ATUAL</span>
+              <h2 style="font-size: 1.3rem; margin-top: 4px;">Guaíra, PR</h2>
+            </div>
+            <div id="weatherIconZone" style="font-size: 2.5rem; color: #f9b17a;">
+              <i class="fa-solid fa-cloud-sun"></i>
+            </div>
+          </div>
+
+          <div class="weather-main-info">
+            <p id="currentDateString">Carregando fuso horário...</p>
+            <h3 id="weatherTemp">--°C</h3>
+            <p id="weatherDesc">Verificando sensores meteorológicos...</p>
+          </div>
+
+          <div class="thermal-stress-box">
+            <h4 style="font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-gauge-high" style="color: #abd2fa;"></i> Índice de Estresse Térmico
+            </h4>
+            <p style="font-size: 0.8rem; color: var(--text2); margin-top: 4px;">
+              Cálculo baseado em dados globais de fadiga de material e condutividade pneumática sob temperatura severa.
+            </p>
+
+            <div class="efficiency-bar-container">
+              <div id="efficiencyBar" class="efficiency-bar"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+              <span style="color: var(--text2);">Perda de Eficiência da Frota:</span>
+              <span id="lossPercentageText" style="color: #ff6b6b;">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="alertModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Emitir Alerta à Frota</h3>
+    <form id="alertForm">
+      <input type="hidden" id="alertId">
+      
+      <div class="input-box" style="margin-bottom: 14px;">
+        <label>Título do Alerta</label>
+        <input type="text" id="alertTitleField" placeholder="Ex: Atraso na Rota Norte" required>
+      </div>
+
+      <div class="input-box" style="margin-bottom: 14px;">
+        <label>Descrição Ocorrência</label>
+        <textarea id="alertDescField" placeholder="Escreva o comunicado detalhado para os usuários..." style="background: #1d2033; border: 1px solid var(--border); padding: 15px; border-radius: 12px; outline: none; color: white; resize: none; height: 100px; font-family: inherit;" required></textarea>
+      </div>
+
+      <div class="input-box" style="margin-bottom: 14px;">
+        <label>Nível de Gravidade</label>
+        <select id="alertTypeField" required>
+          <option value="critico">Crítico (Vermelho - Bloqueios / Falhas Críticas)</option>
+          <option value="atencao">Atenção (Laranja - Desvios / Clima / Lentidão)</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="btnCancelModal" class="btn-cancel">Cancelar</button>
+        <button type="submit" class="btn-save">Publicar Alerta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
+
+<script>
+  (() => {
+    // Chaves oficiais do seu projeto corrigidas
+    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let systemIncidents = [];
+
+    function loadIncidents() {
+      const saved = localStorage.getItem('rota_segura_incidentes');
+      if (saved) {
+        systemIncidents = JSON.parse(saved);
+      } else {
+        systemIncidents = [
+          { id: "1", type: "critico", title: "Manutenção Emergencial", desc: "Ônibus Prefixo 402 apresentou falha mecânica preventiva na Av. Paraná.", time: "18:42" },
+          { id: "2", type: "atencao", title: "Atraso por Clima", desc: "Visibilidade reduzida no trecho rural próximo ao anel viário de Guaíra.", time: "17:10" }
+        ];
+        saveIncidents();
+      }
+    }
+
+    function saveIncidents() {
+      localStorage.setItem('rota_segura_incidentes', JSON.stringify(systemIncidents));
+      updateSidebarNotification();
+    }
+
+    function updateSidebarNotification() {
+      const activeAlertsCount = systemIncidents.filter(i => i.type === 'critico').length;
+      const menuLink = document.getElementById('menuAlertasLink');
+      if (!menuLink) return;
+
+      const existingBadge = menuLink.querySelector('.menu-notification-badge');
+      if (existingBadge) existingBadge.remove();
+
+      if (activeAlertsCount > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'menu-notification-badge';
+        badge.innerText = activeAlertsCount;
+        menuLink.appendChild(badge);
+      }
+    }
+
+    async function checkSession() {
+      // 1. Verifica se existe um usuário autenticado no Supabase
+      const { data: { user }, error: authError } = await db.auth.getUser();
+      if (authError || !user) { 
+        console.error("Usuário não autenticado no Supabase.");
+        window.location.href = 'login.html'; 
+        return; 
+      }
+
+      // Define um nome provisório baseado no e-mail caso o perfil falhe
+      document.getElementById('Username').innerText = user.email.split('@')[0];
+
+      try {
+        // 2. Busca o perfil na tabela (Se falhar, não expulsa o usuário, apenas mantém o e-mail)
+        const { data: profile, error: profileError } = await db.from('profiles').select('display_name, role').eq('id', user.id).maybeSingle();
+        
+        if (profile) {
+          document.getElementById('Username').innerText = profile.display_name || user.email.split('@')[0];
+        }
+      } catch (e) {
+        console.warn("Não foi possível buscar as permissões do perfil, mantendo nível padrão.", e);
+      }
+      
+      // Inicializa os dados da tela normalmente
+      loadIncidents();
+      renderIncidents();
+      fetchRealWeatherGvaira();
+    }
+
+    // BUSCA DE TEMPERATURA EM TEMPO REAL VIA API (Guaíra - PR)
+    async function fetchRealWeatherGvaira() {
+      const options = { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' };
+      document.getElementById('currentDateString').innerText = new Date().toLocaleDateString('pt-BR', options);
+
+      try {
+        const lat = "-24.0806";
+        const lon = "-54.2575";
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_boolean=current&current=temperature_2m,relative_humidity_2m,weather_code`);
+        
+        if (!response.ok) throw new Error("Erro na requisição meteorológica");
+        
+        const data = await response.json();
+        const currentTemp = Math.round(data.current.temperature_2m);
+        const humidity = data.current.relative_humidity_2m;
+        const weatherCode = data.current.weather_code;
+
+        document.getElementById('weatherTemp').innerText = `${currentTemp}°C`;
+        
+        let descClima = "Tempo Limpo";
+        let iconHtml = '<i class="fa-solid fa-sun"></i>';
+        
+        if (weatherCode >= 1 && weatherCode <= 3) {
+          descClima = "Parcialmente Nublado";
+          iconHtml = '<i class="fa-solid fa-cloud-sun"></i>';
+        } else if (weatherCode >= 45 && weatherCode <= 48) {
+          descClima = "Névoa / Nevoeiro";
+          iconHtml = '<i class="fa-solid fa-smog"></i>';
+        } else if (weatherCode >= 51 && weatherCode <= 67) {
+          descClima = "Chuva Leve / Chuvisco";
+          iconHtml = '<i class="fa-solid fa-cloud-rain"></i>';
+        } else if (weatherCode >= 71 && weatherCode <= 86) {
+          descClima = "Precipitação / Instabilidade";
+          iconHtml = '<i class="fa-solid fa-cloud-showers-heavy"></i>';
+        } else if (weatherCode >= 95) {
+          descClima = "Tempestade Elétrica";
+          iconHtml = '<i class="fa-solid fa-cloud-bolt"></i>';
+        }
+
+        document.getElementById('weatherDesc').innerText = `${descClima} • Umidade Relativa: ${humidity}%`;
+        document.getElementById('weatherIconZone').innerHTML = iconHtml;
+
+        let lossPercentage = 0;
+        if (currentTemp > 25) {
+          lossPercentage = Math.round((currentTemp - 25) * 2.2);
+          if (lossPercentage > 100) lossPercentage = 100;
+        }
+
+        document.getElementById('lossPercentageText').innerText = `${lossPercentage}%`;
+        document.getElementById('efficiencyBar').style.width = `${100 - lossPercentage}%`;
+
+      } catch (err) {
+        console.error("Falha ao sincronizar clima tempo real:", err);
+        document.getElementById('weatherTemp').innerText = "--°C";
+        document.getElementById('weatherDesc').innerText = "Falha ao sincronizar sensores de satélite.";
+      }
+    }
+
+    function renderIncidents() {
+      const container = document.getElementById('incidentsContainer');
+      
+      if (!systemIncidents.length) {
+        container.innerHTML = `<p style="color: var(--text2);">Nenhuma ocorrência registrada no perímetro.</p>`;
+        return;
+      }
+
+      container.innerHTML = systemIncidents.map(i => `
+        <div class="alert-item-card ${i.type}">
+          <div class="alert-icon-zone">
+            <i class="${i.type === 'critico' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-exclamation'}"></i>
+          </div>
+          <div class="alert-content-zone">
+            <h4>${escHtml(i.title)}</h4>
+            <p>${escHtml(i.desc)}</p>
+          </div>
+          <div class="alert-meta-zone">
+            <div class="alert-time-stamp">${i.time}</div>
+            <div class="alert-actions">
+              <button class="btn-alert-action edit" onclick="window.editAlert('${i.id}')" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-alert-action delete" onclick="window.deleteAlert('${i.id}')" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const modal = document.getElementById('alertModal');
+    
+    document.getElementById('btnOpenCreateModal').addEventListener('click', () => {
+      document.getElementById('modalTitle').innerText = "Emitir Alerta à Frota";
+      document.getElementById('alertForm').reset();
+      document.getElementById('alertId').value = "";
+      modal.style.display = 'flex';
+    });
+
+    document.getElementById('btnCancelModal').addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    document.getElementById('alertForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('alertId').value;
+      const title = document.getElementById('alertTitleField').value.trim();
+      const desc = document.getElementById('alertDescField').value.trim();
+      const type = document.getElementById('alertTypeField').value;
+      
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      if (id) {
+        const index = systemIncidents.findIndex(item => item.id === id);
+        if (index !== -1) {
+          systemIncidents[index].title = title;
+          systemIncidents[index].desc = desc;
+          systemIncidents[index].type = type;
+          showToast("Alerta editado e retransmitido!", "success");
+        }
+      } else {
+        const newAlert = { id: String(Date.now()), type, title, desc, time: timeStr };
+        systemIncidents.unshift(newAlert);
+        showToast("Novo alerta transmitido à rede!", "success");
+      }
+
+      saveIncidents();
+      renderIncidents();
+      modal.style.display = 'none';
+    });
+
+    window.editAlert = (id) => {
+      const target = systemIncidents.find(item => item.id === id);
+      if (!target) return;
+
+      document.getElementById('modalTitle').innerText = "Modificar Comunicado";
+      document.getElementById('alertId').value = target.id;
+      document.getElementById('alertTitleField').value = target.title;
+      document.getElementById('alertDescField').value = target.desc;
+      document.getElementById('alertTypeField').value = target.type;
+      
+      modal.style.display = 'flex';
+    };
+
+    window.deleteAlert = (id) => {
+      systemIncidents = systemIncidents.filter(item => item.id !== id);
+      saveIncidents();
+      renderIncidents();
+      showToast("Alerta revogado do painel.", "error");
+    };
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').className = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+      document.getElementById('toastMsg').textContent = msg;
+      toast.className = `show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await db.auth.signOut(); window.location.href = 'login.html';
+    });
+
+    function escHtml(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+</body>
+</html>

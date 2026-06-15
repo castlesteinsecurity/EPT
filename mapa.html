@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Centro de Controle Operacional</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Layout CCO de Alta Densidade */
+    .map-interface {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      height: calc(100vh - 140px);
+      margin-top: 20px;
+    }
+
+    /* Painel Lateral de Telemetria */
+    .telemetry-side {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow-y: auto;
+    }
+
+    .panel-section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    /* Container do Mapa */
+    .map-container-zone {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      background: #11121d;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Cartões de Monitoramento de Veículos */
+    .bus-status-card {
+      background: #1d2033;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .bus-status-card:hover {
+      border-color: rgba(171, 210, 250, 0.5);
+    }
+    .bus-status-card.active {
+      border-color: var(--success);
+      box-shadow: 0 0 10px rgba(115, 255, 187, 0.1);
+    }
+
+    .bus-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .bus-title { font-weight: 700; font-size: 0.95rem; color: #fff; }
+    
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text2);
+    }
+    .telemetry-grid span i { color: var(--primary); width: 14px; }
+
+    /* Customização do Tema Escuro do Leaflet */
+    .leaflet-layer,
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out,
+    .leaflet-bar {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #1a1c30 !important;
+      color: #fff !important;
+      border: 1px solid #2f3352;
+      border-radius: 10px;
+    }
+
+    /* Estilização das opções de Pareamento de Dispositivo */
+    .device-pairing-box {
+      background: rgba(171, 210, 250, 0.04);
+      border: 1px dashed rgba(171, 210, 250, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px;
+      font-size: 0.85rem; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 99999;
+      transform: translateY(20px); opacity: 0; transition: transform .25s, opacity .25s; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: #73ffbb; }
+    #toast.success i { color: #73ffbb; }
+
+    @media(max-width: 1024px) {
+      .map-interface { grid-template-columns: 1fr; height: auto; }
+      .map-container-zone { height: 450px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo"><span>Rota Segura</span></div>
+    <nav class="menu">
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html" class="active"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+    </nav>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Monitoramento de Frota</h1>
+        <p>Acompanhamento geográfico e gerenciamento de dispositivos pareados</p>
+      </div>
+      <div class="profile">
+        <div class="profile-text"><span id="Username">Buscando...</span><small>Administrador</small></div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <div class="map-interface">
+      
+      <aside class="telemetry-side">
+        <div>
+          <div class="panel-section-title">Pareamento</div>
+          <div class="device-pairing-box">
+            <p style="font-size: 0.8rem; color: var(--text2); margin-bottom: 10px;">Vincule um novo celular de motorista ao sistema.</p>
+            <button id="btnOpenPairing" class="btn-save" style="width: 100%; padding: 8px; font-size: 0.8rem;"><i class="fa-solid fa-mobile-screen-button"></i> Parear Celular</button>
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 5px 0;">
+
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+          <div class="panel-section-title">Veículos em Linha</div>
+          <div id="busListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+             </div>
+        </div>
+      </aside>
+
+      <div class="map-container-zone">
+        <div id="map"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="pairingModal" class="modal">
+  <div class="modal-content" style="max-width: 400px;">
+    <h3>Parear Celular do Motorista</h3>
+    <p style="font-size: 0.85rem; color: var(--text2); margin-bottom: 15px;">Selecione o veículo para gerar a chave de transmissão de GPS.</p>
+    
+    <form id="pairingForm">
+      <div class="input-box" style="margin-bottom: 15px;">
+        <label>Veículo Alvo</label>
+        <select id="pairingBusSelect" required>
+          <option value="402">Ônibus Prefixo 402 (Rota 01)</option>
+          <option value="305">Ônibus Prefixo 305 (Rota Rural)</option>
+        </select>
+      </div>
+
+      <div id="tokenGenerationZone" style="display: none; background: #1d2033; border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+        <span style="font-size: 0.75rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px;">TOKEN DE ATIVAÇÃO</span>
+        <h2 id="generatedTokenDisplay" style="color: var(--primary); font-size: 1.8rem; margin: 5px 0; letter-spacing: 4px;">------</h2>
+        <p style="font-size: 0.75rem; color: var(--text2);">Insira este código no painel do celular do motorista para iniciar.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="btnCancelPairing" class="btn-cancel">Fechar</button>
+        <button type="submit" id="btnGenerateToken" class="btn-save">Gerar Token</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
+
+<script>
+  (() => {
+    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+    
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let map;
+    let schoolMarker;
+    let busMarkers = {};       
+    let routePolylines = {};   
+
+    const schoolCoords = [-24.08657, -54.24842];
+
+    let activeBuses = {
+      "402": { prefix: "Prefixo 402", route: "Rota 01 - Centro", students: 34, eta: "Aguardando", speed: "0 km/h", status: "Inativo" },
+      "305": { prefix: "Prefixo 305", route: "Rota 02 - Rural", students: 18, eta: "Aguardando", speed: "0 km/h", status: "Inativo" }
+    };
+
+    const guairaStreetGrid = [
+      [-24.08050, -54.26030],
+      [-24.08210, -54.25720],
+      [-24.08430, -54.25310],
+      [-24.08580, -54.25020],
+      [-24.08657, -54.24842]
+    ];
+
+    async function checkSession() {
+      try {
+        const { data: { user }, error: authError } = await db.auth.getUser();
+        if (authError || !user) { window.location.href = 'login.html'; return; }
+        
+        // CORREÇÃO BUG 1: Busca o nome real na tabela profiles com fallback para o e-mail
+        try {
+          const { data: profile } = await db.from('profiles').select('name').eq('id', user.id).maybeSingle();
+          document.getElementById('Username').innerText = profile?.name || user.email.split('@')[0];
+        } catch (profileErr) {
+          document.getElementById('Username').innerText = user.email.split('@')[0];
+        }
+      } catch (err) {
+        console.error("Erro na verificação da sessão:", err);
+      }
+
+      initMap();
+      renderTelemetryCards();         
+      await fetchExistingPositions(); 
+      initSupabaseRealtime();        
+    }
+
+    function initMap() {
+      map = L.map('map', { zoomControl: false }).setView(schoolCoords, 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+
+      const schoolIcon = L.divIcon({
+        html: '<div style="background: #abd2fa; color: #11121d; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; box-shadow: 0 0 15px var(--primary);"><i class="fa-solid fa-school" style="font-size: 14px;"></i></div>',
+        className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+      });
+      schoolMarker = L.marker(schoolCoords, { icon: schoolIcon }).addTo(map);
+      schoolMarker.bindPopup("<b>Colégio Roosevelt</b>").openPopup();
+    }
+
+    async function fetchExistingPositions() {
+      try {
+        const { data, error } = await db.from('bus_positions').select('*');
+        if (!error && data) {
+          data.forEach(pos => {
+            updateBusPositionOnMap(String(pos.bus_id), pos.latitude, pos.longitude, pos.route_name, pos.students_count);
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao carregar posições iniciais:", err);
+      }
+    }
+
+    // CORREÇÃO BUG 3: Escuta em tempo real usando nome único e callback de status
+    function initSupabaseRealtime() {
+      db.channel('bus_positions_live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bus_positions' }, payload => {
+          if (payload.eventType === 'DELETE') {
+            removeVisualBus(String(payload.old.bus_id || payload.old.id));
+          } else if (payload.new) {
+            const { bus_id, latitude, longitude, route_name, students_count } = payload.new;
+            if (bus_id) {
+              updateBusPositionOnMap(String(bus_id), latitude, longitude, route_name, students_count);
+            }
+          }
+        })
+        .subscribe((status) => {
+          console.log('Realtime status:', status);
+        });
+    }
+
+    function updateBusPositionOnMap(busId, lat, lon, dbRoute, dbStudents) {
+      if (!activeBuses[busId]) {
+        activeBuses[busId] = { prefix: `Prefixo ${busId}`, route: dbRoute || "Rota Opcional", students: dbStudents || 0, eta: "Aguardando", speed: "0 km/h", status: "Inativo" };
+      }
+
+      if (dbRoute) activeBuses[busId].route = dbRoute;
+      if (dbStudents !== undefined && dbStudents !== null) activeBuses[busId].students = dbStudents;
+
+      if (lat && lon && lat !== 0 && lon !== 0) {
+        activeBuses[busId].status = "Transmitindo";
+        activeBuses[busId].speed = `${Math.floor(Math.random() * 8) + 32} km/h`;
+
+        let subRoute = [];
+        let foundStart = false;
+        guairaStreetGrid.forEach(pt => {
+          if (!foundStart) { subRoute.push([lat, lon]); foundStart = true; }
+          subRoute.push(pt);
+        });
+
+        const distance = map.distance([lat, lon], schoolCoords);
+        if (distance < 75) {
+          activeBuses[busId].eta = "No Ponto";
+          activeBuses[busId].speed = "0 km/h";
+          subRoute = [[lat, lon], schoolCoords];
+        } else {
+          activeBuses[busId].eta = `${Math.ceil((distance / 1000) * 2.2)} min`;
+        }
+
+        if (!busMarkers[busId]) {
+          const busIcon = L.divIcon({
+            html: `<div style="background: #73ffbb; color: #11121d; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid #11121d; box-shadow: 0 4px 15px rgba(115,255,187,0.5); font-weight: bold; font-size: 0.85rem;">${busId}</div>`,
+            className: '', iconSize: [45, 45], iconAnchor: [22, 22]
+          });
+          busMarkers[busId] = L.marker([lat, lon], { icon: busIcon }).addTo(map);
+        } else {
+          busMarkers[busId].setLatLng([lat, lon]);
+        }
+
+        if (routePolylines[busId]) map.removeLayer(routePolylines[busId]);
+        routePolylines[busId] = L.polyline(subRoute, { color: '#73ffbb', weight: 4, opacity: 0.8, dashArray: '8, 12' }).addTo(map);
+      } else {
+        if(activeBuses[busId].status === "Transmitindo" && (!lat || lat === 0)) {
+           activeBuses[busId].status = "Inativo";
+        }
+      }
+
+      renderTelemetryCards();
+    }
+
+    function renderTelemetryCards() {
+      const container = document.getElementById('busListContainer');
+      if (!container) return;
+
+      container.innerHTML = Object.keys(activeBuses).map(id => {
+        const bus = activeBuses[id];
+        const isLive = bus.status === "Transmitindo";
+        
+        return `
+          <div class="bus-status-card ${isLive ? 'active' : ''}" style="margin-bottom: 8px;">
+            <div class="bus-card-header">
+              <span class="bus-title">${bus.prefix} <small style="color:var(--text2); font-weight:normal;">(${bus.route})</small></span>
+              <span class="status-badge" style="font-size:0.7rem; padding:2px 6px; background: ${isLive ? 'rgba(115,255,187,0.1)' : '#333'}; color: ${isLive ? '#73ffbb' : '#aaa'}; border: 1px solid ${isLive ? '#73ffbb' : '#444'}; border-radius: 4px;">
+                ${bus.status}
+              </span>
+            </div>
+            <div class="telemetry-grid" style="margin-bottom: 8px;">
+              <span><i class="fa-solid fa-clock"></i> ETA: <b>${bus.eta}</b></span>
+              <span><i class="fa-solid fa-gauge"></i> Vel: ${bus.speed}</span>
+              <span style="grid-column: span 2;"><i class="fa-solid fa-user-lock"></i> Alunos: <b>${bus.students}</b></span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-alert-action edit" onclick="window.editBusTelemetry('${id}')" style="flex: 1; padding: 6px; font-size: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--primary); border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-pen-to-square"></i> Editar
+              </button>
+              <button class="btn-alert-action delete" onclick="window.removeBusFromPanel('${id}')" style="padding: 6px 10px; font-size: 0.75rem; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: #ff6b6b; border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // CORREÇÃO BUG 2: Passa lat/lon existentes e onConflict estruturado
+    window.editBusTelemetry = async (id) => {
+      const targetBus = activeBuses[id];
+      const newRoute = prompt("Definir bairro/linha:", targetBus.route);
+      const newStudents = prompt("Quantidade de alunos a bordo:", targetBus.students);
+      
+      if (newRoute !== null && newStudents !== null && !isNaN(newStudents)) {
+        const updatedStudents = parseInt(newStudents);
+        
+        activeBuses[id].route = newRoute;
+        activeBuses[id].students = updatedStudents;
+        renderTelemetryCards();
+
+        try {
+          await db.from('bus_positions').upsert({
+            bus_id: id,
+            route_name: newRoute,
+            students_count: updatedStudents,
+            latitude: busMarkers[id] ? busMarkers[id].getLatLng().lat : 0,
+            longitude: busMarkers[id] ? busMarkers[id].getLatLng().lng : 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'bus_id' });
+          
+          showToast("Dados salvos com sucesso.");
+        } catch (err) {
+          console.error("Erro ao salvar dados no Supabase:", err);
+        }
+      }
+    };
+
+    window.removeBusFromPanel = async (id) => {
+      if (confirm(`Remover e apagar dados do veículo ${id} permanentemente?`)) {
+        removeVisualBus(id);
+        try {
+          await db.from('bus_positions').delete().eq('bus_id', id);
+          showToast("Veículo removido do servidor.");
+        } catch(err) {
+          console.error(err);
+        }
+      }
+    };
+
+    function removeVisualBus(id) {
+      if (busMarkers[id]) { map.removeLayer(busMarkers[id]); delete busMarkers[id]; }
+      if (routePolylines[id]) { map.removeLayer(routePolylines[id]); delete routePolylines[id]; }
+      
+      if (id === "402" || id === "305") {
+        activeBuses[id] = { prefix: `Prefixo ${id}`, route: id === "402" ? "Rota 01 - Centro" : "Rota 02 - Rural", students: id === "402" ? 34 : 18, eta: "Aguardando", speed: "0 km/h", status: "Inativo" };
+      } else {
+        delete activeBuses[id];
+      }
+      renderTelemetryCards();
+    }
+
+    const modal = document.getElementById('pairingModal');
+    const tokenZone = document.getElementById('tokenGenerationZone');
+    const btnGenerate = document.getElementById('btnGenerateToken');
+
+    document.getElementById('btnOpenPairing').addEventListener('click', () => {
+      tokenZone.style.display = 'none';
+      btnGenerate.style.display = 'block';
+      modal.style.display = 'flex';
+    });
+
+    document.getElementById('btnCancelPairing').addEventListener('click', () => { modal.style.display = 'none'; });
+
+    document.getElementById('pairingForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      document.getElementById('generatedTokenDisplay').innerText = Math.floor(100000 + Math.random() * 900000);
+      btnGenerate.style.display = 'none';
+      tokenZone.style.display = 'block';
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').className = 'fa-solid fa-circle-check';
+      document.getElementById('toastMsg').textContent = msg;
+      toast.className = 'show success';
+      setTimeout(() => { toast.className = ''; }, 3000);
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await db.auth.signOut(); window.location.href = 'login.html';
+    });
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+</body>
+</html>

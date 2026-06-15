@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="loader.css">
+  <title>Document</title>
+</head>
+<body style="background: #1e2035; display: flex; justify-content: center; align-items: center; height: 100vh;">
+  <span class="loader"></span>
+
+  <script>
+    setTimeout(function() {
+      document.body.style.transition = "0.5s";
+      document.body.style.opacity = "0";
+    
+      setTimeout(function() {
+          window.location.href = "ulogin.html";
+      },  500); 
+    }, 4000);
+  </script>
+</body>
+</html>

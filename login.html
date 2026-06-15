@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>auth-gateway :: login</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-page: #1e2035;
+            --bg-titlebar: #1a1c30;
+            --bg-left: #252841;
+            --bg-right: #1c1e36;
+            --bg-input: #2d3154;
+            --bg-input-focus: #333866;
+            --border: #3a3e5e;
+            --border-bright: #4a4f7a;
+            --accent: #d9fced;
+            --accent-dim: #7d96b0;
+            --accent-glow: rgba(217, 252, 237, 0.22);
+            --text: #ffffff;
+            --text-dim: #a0a3c4;
+            --highlight: #abd2fa;
+            --red: #ff6b6b;
+            --font: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-page);
+            background-image:
+                linear-gradient(rgba(217, 252, 237, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(217, 252, 237, 0.035) 1px, transparent 1px);
+            background-size: 38px 38px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        a { color: inherit; }
+
+        .terminal-window {
+            position: relative;
+            width: 92vw;
+            max-width: 1120px;
+            height: 84vh;
+            max-height: 640px;
+            border-radius: 8px;
+            border: 1px solid var(--border-bright);
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-window::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 2px,
+                rgba(217, 252, 237, 0.02) 3px
+            );
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ---------- title bar ---------- */
+
+        .title-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: 38px;
+            padding: 0 16px;
+            background: var(--bg-titlebar);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .tb-buttons { display: flex; gap: 8px; }
+
+        .tb-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            border: 1px solid var(--border-bright);
+            background: transparent;
+        }
+        .tb-dot.tb-close { border-color: #5a3434; }
+        .tb-dot.tb-min { border-color: #5a5430; }
+        .tb-dot.tb-max { border-color: var(--accent-dim); }
+
+        .title-bar-text { flex: 1; text-align: center; letter-spacing: 0.5px; }
+
+        .title-bar-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent);
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* ---------- layout ---------- */
+
+        .wrapper { display: flex; flex: 1; min-height: 0; }
+
+        .panel-left {
+            flex: 1;
+            background: var(--bg-left);
+            padding: 48px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .prompt-path { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
+        .prompt-path span { color: var(--accent); }
+
+        .panel-left h1 {
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .panel-left h2 {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 400;
+            margin-bottom: 40px;
+        }
+
+        .panel-left h2 a {
+            color: var(--highlight);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--highlight);
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .panel-left h2 a:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* ---------- form ---------- */
+
+        .input-group { margin-bottom: 20px; }
+
+        .field-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .prompt-field {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .prompt-field:focus-within {
+            border-color: var(--accent);
+            background: var(--bg-input-focus);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .prompt-char {
+            padding-left: 16px;
+            color: var(--accent-dim);
+            font-weight: 700;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+        .prompt-field:focus-within .prompt-char { color: var(--accent); }
+
+        .input-group input {
+            flex: 1;
+            width: 100%;
+            height: 46px;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 0 16px;
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 0.92rem;
+        }
+        .input-group input::placeholder { color: #5a5f82; }
+
+        .btn-login {
+            margin-top: 14px;
+            width: 100%;
+            height: 48px;
+            background: transparent;
+            border: 1px solid var(--accent-dim);
+            border-radius: 4px;
+            color: var(--accent);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+        }
+        .btn-login:hover {
+            background: var(--accent);
+            color: #1a1f3a;
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+        .btn-login:active { transform: translateY(1px); }
+
+        .feedback-msg {
+            margin-top: 18px;
+            font-size: 0.8rem;
+            min-height: 1.2em;
+            color: var(--text-dim);
+        }
+
+        /* ---------- right panel ---------- */
+
+        .panel-right {
+            width: 42%;
+            flex-shrink: 0;
+            background: var(--bg-right);
+            border-left: 1px solid var(--border);
+            padding: 40px 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            overflow-y: auto;
+        }
+
+        .ascii-art {
+            font-size: 0.6rem;
+            line-height: 1.15;
+            color: var(--accent);
+            text-shadow: 0 0 8px var(--accent-glow);
+            white-space: pre;
+            text-align: center;
+        }
+
+        .motd { display: flex; flex-direction: column; gap: 2px; }
+
+        .motd-line {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+            opacity: 0;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .motd-line.heading { color: var(--accent); font-weight: 700; }
+        .motd-line:nth-child(1) { animation-delay: 0.1s; }
+        .motd-line:nth-child(2) { animation-delay: 0.3s; }
+        .motd-line:nth-child(3) { animation-delay: 0.5s; }
+        .motd-line:nth-child(4) { animation-delay: 0.7s; }
+        .motd-line:nth-child(5) { animation-delay: 0.9s; }
+
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.78rem;
+            margin-top: auto;
+        }
+        .status-item { display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
+        .status-value { margin-left: auto; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot-on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+        .dot-pending {
+            background: var(--highlight);
+            box-shadow: 0 0 6px var(--highlight);
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        .cursor-line { font-size: 0.8rem; color: var(--text-dim); }
+        .cursor { color: var(--accent); animation: blink 1s steps(1) infinite; }
+
+        .dev-credit {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-bottom: 1px dotted transparent;
+            align-self: flex-start;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .dev-credit:hover { color: var(--highlight); border-bottom-color: var(--highlight); }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+        @keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 760px) {
+            html, body { height: auto; }
+            body { overflow: auto; padding: 24px 0; }
+            .terminal-window { width: 95vw; height: auto; max-height: none; }
+            .wrapper { flex-direction: column; }
+            .panel-right { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+            .panel-left { padding: 36px 28px; }
+            .ascii-art { font-size: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="terminal-window">
+
+    <div class="title-bar">
+        <div class="tb-buttons">
+            <span class="tb-dot tb-close"></span>
+            <span class="tb-dot tb-min"></span>
+            <span class="tb-dot tb-max"></span>
+        </div>
+        <div class="title-bar-text">root@auth-gateway: ~/sessions/login</div>
+        <div class="title-bar-status"><span class="status-dot"></span> TLS 1.3</div>
+    </div>
+
+    <div class="wrapper">
+
+        <div class="panel-left">
+            <p class="prompt-path"><span>~/auth</span> $</p>
+            <h1>./login.sh</h1>
+            <h2># sem conta? execute <a href="register.html">./register.sh</a></h2>
+
+            <form id="loginForm">
+                <div class="input-group">
+                    <label class="field-label">--email</label>
+                    <div class="prompt-field">
+                        <span class="prompt-char">$</span>
+                        <input type="email" id="email" name="email" placeholder="usuario@dominio.com" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="field-label">--senha</label>
+                    <div class="prompt-field">
+                        <span class="prompt-char">$</span>
+                        <input type="password" id="password" name="password" placeholder="••••••••••" required>
+                    </div>
+                </div>
+                <button class="btn-login" type="submit">[ EXECUTAR LOGIN ]</button>
+            </form>
+
+            <div id="feedback" class="feedback-msg"></div>
+        </div>
+
+        <div class="panel-right">
+<pre class="ascii-art">        ▄▄▄▄▄▄▄
+      ▄█       █▄
+     ██         ██
+     ██         ██
+  ▄▄▄██▄▄▄▄▄▄▄▄▄██▄▄▄
+ █████████████████████
+ ██                 ██
+ ██    ▄▄▄▄▄▄▄▄▄    ██
+ ██    █       █    ██
+ ██    █▄▄▄▄▄▄▄█     ██
+ ██        █        ██
+ █████████████████████</pre>
+
+            <div class="motd">
+                <p class="motd-line heading">root@auth-gateway:~$ cat /etc/motd</p>
+                <p class="motd-line">================================</p>
+                <p class="motd-line">  ACESSO RESTRITO</p>
+                <p class="motd-line">  Conexão monitorada e registrada</p>
+                <p class="motd-line">================================</p>
+            </div>
+
+            <div class="status-list">
+                <div class="status-item">
+                    <span class="dot dot-on"></span>
+                    <span>FIREWALL</span>
+                    <span class="status-value">ATIVO</span>
+                </div>
+                <div class="status-item">
+                    <span class="dot dot-on"></span>
+                    <span>VPN TUNNEL</span>
+                    <span class="status-value">CONECTADO</span>
+                </div>
+                <div class="status-item">
+                    <span class="dot dot-pending"></span>
+                    <span>SESSÃO</span>
+                    <span class="status-value">AGUARDANDO</span>
+                </div>
+            </div>
+
+            <p class="cursor-line">root@auth-gateway:~$ <span class="cursor">_</span></p>
+            <a class="dev-credit" href="https://github.com/Wormkt" target="_blank" rel="noopener"># dev: FrankenSteinSecurity</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // 1. Credenciais Supabase
+    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    // 2. Inicializa o cliente do Supabase
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const feedback = document.getElementById('feedback');
+
+    // 3. Helper para escrever mensagens em formato de log
+    function logLine(level, message) {
+        const styles = {
+            info:  { color: 'var(--text-dim)', tag: '[INFO]' },
+            ok:    { color: 'var(--accent)',    tag: '[ OK ]' },
+            error: { color: 'var(--red)',      tag: '[ERRO]' }
+        };
+        const s = styles[level] || styles.info;
+        feedback.style.color = s.color;
+        feedback.innerText = `${s.tag} ${message}`;
+    }
+
+    // 4. Captura o envio do formulário
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        logLine('info', 'verificando credenciais...');
+
+        // 5. Tentativa de login no Supabase
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        // 6. Trata a resposta
+        if (error) {
+            logLine('error', error.message);
+        } else {
+            logLine('ok', 'autenticado. redirecionando para ./dashboard...');
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 1500);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rota Segura · Selecionar acesso</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #1e2035;
+            --bg-soft: #2a2e58;
+            --panel: #252841;
+            --card: #2d3154;
+            --card-hover: #363b66;
+            --border: #3a3e5e;
+            --mint: #d9fced;
+            --sky: #abd2fa;
+            --text: #ffffff;
+            --text-muted: #a0a3c4;
+            --text-faint: #4e5275;
+            --display: 'Quicksand', 'Segoe UI', sans-serif;
+            --body-font: 'Nunito', 'Segoe UI', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--body-font);
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 90vw;
+            max-width: 1100px;
+            height: 80vh;
+            max-height: 620px;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+
+        /* ---------- left: welcome scene ---------- */
+
+        .panel-left {
+            position: relative;
+            width: 45%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 32px;
+            background: linear-gradient(160deg, var(--bg) 0%, var(--bg-soft) 100%);
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            pointer-events: none;
+        }
+        .blob-1 { width: 240px; height: 240px; background: var(--mint); opacity: 0.16; top: -70px; right: -70px; }
+        .blob-2 { width: 280px; height: 280px; background: var(--sky); opacity: 0.14; bottom: -90px; left: -90px; }
+
+        .logo {
+            position: absolute;
+            top: 28px;
+            left: 28px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .logo svg { width: 20px; height: 20px; color: var(--mint); flex-shrink: 0; }
+
+        /* visitor badge */
+
+        .badge-card {
+            position: relative;
+            z-index: 2;
+            width: 200px;
+            background: #f4fbf8;
+            border-radius: 22px;
+            padding: 28px 22px 22px;
+            text-align: center;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.35);
+            transform: rotate(-4deg);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .badge-hole {
+            width: 50px;
+            height: 8px;
+            border-radius: 6px;
+            background: rgba(30, 32, 53, 0.12);
+            margin: 0 auto 18px;
+        }
+
+        .badge-logo {
+            font-family: var(--display);
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--bg);
+            margin-bottom: 16px;
+        }
+
+        .badge-avatar {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--mint), var(--sky));
+            color: var(--bg);
+        }
+        .badge-avatar svg { width: 38px; height: 38px; }
+
+        .badge-name {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--bg);
+            margin-bottom: 2px;
+        }
+
+        .badge-role {
+            font-size: 0.75rem;
+            color: #8b93b8;
+            margin-bottom: 18px;
+        }
+
+        .badge-barcode {
+            height: 26px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            opacity: 0.85;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--bg) 0px, var(--bg) 2px,
+                transparent 2px, transparent 5px
+            );
+        }
+
+        .badge-id {
+            font-size: 0.62rem;
+            letter-spacing: 1px;
+            color: #b6bdd8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: rotate(-4deg) translateY(0); }
+            50% { transform: rotate(-2deg) translateY(-10px); }
+        }
+
+        /* welcome text + dots */
+
+        .panel-left-text {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-top: 34px;
+            color: #fff;
+        }
+
+        .panel-left-text h3 {
+            font-family: var(--display);
+            font-size: 1.4rem;
+            font-weight: 600;
+            line-height: 1.4;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .dots span {
+            width: 24px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(217, 252, 237, 0.2);
+        }
+        .dots span.active {
+            background: var(--mint);
+            width: 36px;
+        }
+
+        /* ---------- right: selection ---------- */
+
+        .panel-right {
+            flex: 1;
+            background: var(--panel);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 56px 52px;
+        }
+
+        .panel-right h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--display);
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+            animation-delay: 0.05s;
+        }
+
+        .wave {
+            display: inline-block;
+            transform-origin: 70% 70%;
+            animation: wave 2.4s ease-in-out infinite;
+        }
+
+        .panel-right h2 {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        .panel-right h2 b {
+            color: var(--mint);
+            font-family: var(--display);
+            font-weight: 600;
+        }
+
+        .select-box {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .select-btn {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px 22px;
+            border-radius: 18px;
+            background: var(--card);
+            border: 1px solid transparent;
+            text-decoration: none;
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+            transition:
+                background 0.25s ease,
+                transform 0.25s ease,
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
+        }
+        .select-btn:nth-of-type(1) { animation-delay: 0.25s; }
+        .select-btn:nth-of-type(2) { animation-delay: 0.35s; }
+
+        .icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(217, 252, 237, 0.12);
+            color: var(--mint);
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .icon-wrap svg { width: 24px; height: 24px; }
+
+        .admin-btn .icon-wrap {
+            background: rgba(171, 210, 250, 0.12);
+            color: var(--sky);
+        }
+
+        .select-btn .text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+        .select-btn .label {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.2px;
+        }
+        .select-btn .sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .select-btn .arrow {
+            font-size: 1.1rem;
+            opacity: 0.4;
+            flex-shrink: 0;
+            transition: opacity 0.25s, transform 0.25s;
+        }
+
+        .select-btn:hover {
+            background: var(--card-hover);
+            border-color: var(--mint);
+            transform: translateX(6px);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+        }
+        .select-btn:hover .arrow { opacity: 1; transform: translateX(4px); }
+        .select-btn:hover .icon-wrap { background: var(--mint); color: var(--bg); }
+
+        .admin-btn:hover { border-color: var(--sky); }
+        .admin-btn:hover .icon-wrap { background: var(--sky); color: var(--bg); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 6px 0 4px;
+            color: var(--text-faint);
+            font-size: 0.78rem;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+            animation-delay: 0.3s;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes wave {
+            0%, 60%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(14deg); }
+            20% { transform: rotate(-8deg); }
+            40% { transform: rotate(10deg); }
+            50% { transform: rotate(-4deg); }
+        }
+
+        @media (max-width: 700px) {
+            body { height: auto; overflow: auto; padding: 24px 0; }
+            .wrapper { flex-direction: column; width: 95vw; height: auto; max-height: none; }
+            .panel-left { width: 100%; padding: 32px 24px 28px; }
+            .badge-card { width: 170px; }
+            .panel-right { padding: 36px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div class="panel-left">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+                <circle cx="12" cy="10" r="2.4"/>
+            </svg>
+            Rota Segura
+        </div>
+
+        <div class="badge-card">
+            <div class="badge-hole"></div>
+            <div class="badge-logo">Rota Segura</div>
+            <div class="badge-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="3.5"/>
+                    <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+                </svg>
+            </div>
+            <div class="badge-name">Bem-vindo(a)</div>
+            <div class="badge-role">Crachá de acesso</div>
+            <div class="badge-barcode"></div>
+            <div class="badge-id">Nº 0427 · Válido hoje</div>
+        </div>
+
+        <div class="panel-left-text">
+            <h3>Conectando Responsáveis,<br>Assegurando as rotas</h3>
+            <div class="dots">
+                <span></span>
+                <span></span>
+                <span class="active"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-right">
+        <h1>Bem-vindo! <span class="wave">👋</span></h1>
+        <h2>Escolha sua <b>Responsabilidade</b> para continuar</h2>
+
+        <div class="select-box">
+            <a href="loading.html" class="select-btn">
+                <span class="icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="8" r="3"/>
+                        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                        <circle cx="17" cy="7" r="2.3"/>
+                        <path d="M14.7 14.2c2.7.4 4.8 2.6 4.8 5.8"/>
+                    </svg>
+                </span>
+                <span class="text">
+                    <span class="label">Responsável / Aluno</span>
+                    <span class="sub">Acompanhe o trajeto em tempo real</span>
+                </span>
+                <span class="arrow">→</span>
+            </a>
+
+            <div class="divider">ou, se você faz parte da equipe</div>
+
+            <a href="loading2.html" class="select-btn admin-btn">
+                <span class="icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 3h6a1 1 0 011 1v1H8V4a1 1 0 011-1z"/>
+                        <rect x="5" y="5" width="14" height="16" rx="3"/>
+                        <circle cx="12" cy="11" r="2.4"/>
+                        <path d="M8 17.5h8"/>
+                    </svg>
+                </span>
+                <span class="text">
+                    <span class="label">Acesso Autorizado</span>
+                    <span class="sub">Para motoristas e equipe escolar</span>
+                </span>
+                <span class="arrow">→</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

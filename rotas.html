@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Gestão de Rotas</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Layout de duas colunas para organização de rotas */
+    .routes-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    .section-label { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      margin-bottom: 20px; 
+    }
+    .section-label h2 { font-size: 1.2rem; font-weight: 700; }
+
+    /* Cards de Rota Activa/Inativa */
+    .route-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+    }
+    .route-card:hover, .route-card.selected {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .route-card.selected {
+      background: var(--card-hover);
+    }
+    .route-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .route-title { font-size: 1.1rem; font-weight: 700; color: white; }
+    
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .status-badge.active { background: rgba(115, 255, 187, 0.1); color: #73ffbb; }
+    .status-badge.inactive { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
+
+    .route-details {
+      font-size: 0.88rem;
+      color: var(--text2);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .route-details i { width: 18px; color: var(--primary); }
+
+    /* Lista de Paradas Dinâmicas */
+    .stops-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1d2033;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .stop-number {
+      background: var(--primary);
+      color: #1d2033;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .stop-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: white;
+      outline: none;
+    }
+    .btn-remove-stop {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+    .btn-remove-stop:hover { color: #ff8585; }
+
+    .btn-add-stop {
+      background: rgba(171, 210, 250, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(171, 210, 250, 0.2);
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      transition: .25s;
+    }
+    .btn-add-stop:hover { background: rgba(171, 210, 250, 0.2); }
+
+    .panel-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+    }
+
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px;
+      font-size: 0.85rem; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 99999;
+      transform: translateY(20px); opacity: 0; transition: transform .25s, opacity .25s; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: #73ffbb; }
+    #toast.success i { color: #73ffbb; }
+    #toast.error { border-color: #ff7d7d; }
+    #toast.error i { color: #ff7d7d; }
+
+    @media(max-width: 1024px) {
+      .routes-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo"><span>Rota Segura</span></div>
+    <nav class="menu">
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html" class="active"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+    </nav>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Gestão de Rotas</h1>
+        <p>Planeje itinerários, horários e defina motoristas operacionais</p>
+      </div>
+      <div class="profile">
+        <div class="profile-text"><span id="Username">Buscando...</span><small>Administrador</small></div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <section class="cards" style="margin-bottom: 25px;">
+      <div class="card" style="padding: 18px 22px;">
+        <div class="card-icon" style="width:48px; height:48px;"><i class="fa-solid fa-route"></i></div>
+        <div><span>Rotas Mapeadas</span><h2 id="totalRoutesNum">0</h2></div>
+      </div>
+      <div class="card" style="padding: 18px 22px;">
+        <div class="card-icon" style="width:48px; height:48px; background: rgba(115,255,187,0.08);"><i class="fa-solid fa-circle-check" style="color: #73ffbb;"></i></div>
+        <div><span>Em Operação</span><h2 id="activeRoutesNum">0</h2></div>
+      </div>
+    </section>
+
+    <div class="routes-layout">
+      
+      <div class="routes-list-side">
+        <div class="section-label">
+          <i class="fa-solid fa-folder-open" style="color: var(--primary);"></i>
+          <h2>Itinerários Cadastrados</h2>
+        </div>
+        <div id="routesContainer">
+          <p style="color: var(--text2);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando rotas...</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 id="formTitle">Criar Nova Rota</h2>
+          <button id="btnNewRouteMode" class="btn-cancel" style="padding: 6px 12px; font-size: 0.8rem; display:none;">Nova Rota</button>
+        </div>
+
+        <form id="routeForm">
+          <input type="hidden" id="routeId">
+
+          <div class="input-box" style="margin-bottom: 14px;">
+            <label>Nome da Rota</label>
+            <input type="text" id="routeName" placeholder="Ex: Rota 04 - Noturno Unipar" required>
+          </div>
+
+          <div class="input-box" style="margin-bottom: 14px;">
+            <label>Motorista Responsável</label>
+            <select id="routeDriver" required>
+              <option value="">Selecione um motorista...</option>
+            </select>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="input-box">
+              <label>Horário de Partida</label>
+              <input type="time" id="routeTimeStart" required>
+            </div>
+            <div class="input-box">
+              <label>Status</label>
+              <select id="routeStatus">
+                <option value="true">Ativa</option>
+                <option value="false">Inativa</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-box" style="margin-bottom: 20px;">
+            <label>Pontos de Parada (Ordem de Atendimento)</label>
+            <div id="stopsContainer" class="stops-container">
+              </div>
+            <button type="button" id="btnAddStopRow" class="btn-add-stop">
+              <i class="fa-solid fa-plus"></i> Adicionar Ponto de Parada
+            </button>
+          </div>
+
+          <div class="panel-actions">
+            <button type="button" id="btnDeleteRoute" class="btn-cancel" style="color:#ff6b6b; border-color: rgba(255,107,107,0.2); display:none;">Excluir Rota</button>
+            <span style="flex:1;"></span>
+            <button type="submit" class="btn-save" id="btnSaveRoute">Salvar Rota</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
+
+<script>
+  (() => {
+    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let driversList = [];
+    let busesList = [];
+    let localRoutes = [];
+
+    // Carrega dados salvos do localStorage ou define rotas iniciais de fábrica
+    function loadSavedRoutes() {
+      const saved = localStorage.getItem('rota_segura_itinerarios');
+      if (saved) {
+        localRoutes = JSON.parse(saved);
+      } else {
+        localRoutes = [
+          { id: "1", name: "Rota 01 - Universitária Noturna", driver_id: "", time_start: "18:30", active: true, stops: ["Praça Central Guaíra", "Av. Paraná - Posto", "Portal da Universidade"] },
+          { id: "2", name: "Rota Rural - Assentamento", driver_id: "", time_start: "06:15", active: false, stops: ["Vila Rural", "Cruzeirinho", "Escola Municipal"] }
+        ];
+        saveToStorage();
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('rota_segura_itinerarios', JSON.stringify(localRoutes));
+    }
+
+    async function checkSession() {
+      const { data: { user }, error: authError } = await db.auth.getUser();
+      if (authError || !user) { window.location.href = 'login.html'; return; }
+
+      const { data: profile } = await db.from('profiles').select('display_name, role').eq('id', user.id).maybeSingle();
+      if (!profile || profile.role?.toLowerCase() !== 'administrador') {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+      document.getElementById('Username').innerText = profile.display_name || user.email.split('@')[0];
+      
+      loadSavedRoutes();
+      await loadFormData();
+      renderRoutes();
+    }
+
+    async function loadFormData() {
+      const { data: drivers } = await db.from('profiles').select('id, display_name').eq('role', 'motorista').order('display_name');
+      const { data: buses } = await db.from('buses').select('driver_id, plate, model');
+
+      driversList = drivers || [];
+      busesList = buses || [];
+
+      const selectDriver = document.getElementById('routeDriver');
+      selectDriver.innerHTML = '<option value="">Selecione um motorista...</option>' + 
+        driversList.map(d => `<option value="${d.id}">${escHtml(d.display_name)}</option>`).join('');
+    }
+
+    function renderRoutes() {
+      const container = document.getElementById('routesContainer');
+      
+      // Contagem total e contagem dinâmica de rotas ATIVAS ("Em Operação")
+      const totalRoutes = localRoutes.length;
+      const activeRoutes = localRoutes.filter(r => r.active === true).length;
+
+      document.getElementById('totalRoutesNum').innerText = totalRoutes;
+      document.getElementById('activeRoutesNum').innerText = activeRoutes;
+
+      if (!localRoutes.length) {
+        container.innerHTML = `<p style="color: var(--text2);">Nenhuma rota planejada.</p>`;
+        return;
+      }
+
+      const busMap = {};
+      busesList.forEach(b => { busMap[b.driver_id] = b; });
+      const driverMap = {};
+      driversList.forEach(d => { driverMap[d.id] = d.display_name; });
+
+      container.innerHTML = localRoutes.map(r => {
+        const driverName = driverMap[r.driver_id] || "Não alocado";
+        const busInfo = busMap[r.driver_id] ? `${busMap[r.driver_id].model} (${busMap[r.driver_id].plate})` : "Nenhum veículo";
+        const stopsCount = r.stops ? r.stops.length : 0;
+
+        return `
+          <div class="route-card" id="card-${r.id}" data-id="${r.id}">
+            <div class="route-header">
+              <span class="route-title">${escHtml(r.name)}</span>
+              <span class="status-badge ${r.active ? 'active' : 'inactive'}">${r.active ? 'Ativa' : 'Inativa'}</span>
+            </div>
+            <div class="route-details">
+              <span><i class="fa-solid fa-id-card"></i> Condutor: <b>${escHtml(driverName)}</b></span>
+              <span><i class="fa-solid fa-bus"></i> Frota: ${escHtml(busInfo)}</span>
+              <span><i class="fa-solid fa-clock"></i> Saída: ${r.time_start} h</span>
+              <span><i class="fa-solid fa-location-dot"></i> ${stopsCount} pontos de parada mapeados</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.route-card').forEach(card => {
+        card.addEventListener('click', () => selectRouteForEdit(card.dataset.id));
+      });
+    }
+
+    const stopsContainer = document.getElementById('stopsContainer');
+    
+    function addStopRow(value = "") {
+      const rowCount = stopsContainer.children.length + 1;
+      const div = document.createElement('div');
+      div.className = 'stop-row';
+      div.innerHTML = `
+        <span class="stop-number">${rowCount}</span>
+        <input type="text" placeholder="Nome do ponto ou referência" value="${escHtml(value)}" required>
+        <button type="button" class="btn-remove-stop"><i class="fa-solid fa-trash-can"></i></button>
+      `;
+      
+      div.querySelector('.btn-remove-stop').addEventListener('click', () => {
+        div.remove();
+        reindexStops();
+      });
+      stopsContainer.appendChild(div);
+    }
+
+    function reindexStops() {
+      document.querySelectorAll('.stop-row').forEach((row, i) => {
+        row.querySelector('.stop-number').innerText = i + 1;
+      });
+    }
+
+    document.getElementById('btnAddStopRow').addEventListener('click', () => addStopRow(""));
+
+    function selectRouteForEdit(id) {
+      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById(`card-${id}`).classList.add('selected');
+
+      const route = localRoutes.find(r => r.id === id);
+      if (!route) return;
+
+      document.getElementById('formTitle').innerText = "Editar Rota";
+      document.getElementById('routeId').value = route.id;
+      document.getElementById('routeName').value = route.name;
+      document.getElementById('routeDriver').value = route.driver_id;
+      document.getElementById('routeTimeStart').value = route.time_start;
+      document.getElementById('routeStatus').value = route.active ? "true" : "false";
+
+      stopsContainer.innerHTML = "";
+      if (route.stops) {
+        route.stops.forEach(s => addStopRow(s));
+      }
+
+      document.getElementById('btnDeleteRoute').style.display = "block";
+      document.getElementById('btnNewRouteMode').style.display = "block";
+    }
+
+    function setCreateMode() {
+      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById('formTitle').innerText = "Criar Nova Rota";
+      document.getElementById('routeForm').reset();
+      document.getElementById('routeId').value = "";
+      stopsContainer.innerHTML = "";
+      addStopRow("");
+      document.getElementById('btnDeleteRoute').style.display = "none";
+      document.getElementById('btnNewRouteMode').style.display = "none";
+    }
+    document.getElementById('btnNewRouteMode').addEventListener('click', setCreateMode);
+
+    document.getElementById('routeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('routeId').value;
+      const name = document.getElementById('routeName').value.trim();
+      const driver_id = document.getElementById('routeDriver').value;
+      const time_start = document.getElementById('routeTimeStart').value;
+      const active = document.getElementById('routeStatus').value === "true";
+
+      const stops = [];
+      document.querySelectorAll('.stop-row input').forEach(input => {
+        if(input.value.trim()) stops.push(input.value.trim());
+      });
+
+      if (id) {
+        const index = localRoutes.findIndex(r => r.id === id);
+        if (index !== -1) {
+          localRoutes[index] = { id, name, driver_id, time_start, active, stops };
+          showToast("Rota atualizada com sucesso!");
+        }
+      } else {
+        const newId = String(Date.now());
+        localRoutes.push({ id: newId, name, driver_id, time_start, active, stops });
+        showToast("Nova rota planejada com sucesso!");
+      }
+
+      saveToStorage();
+      renderRoutes();
+      setCreateMode();
+    });
+
+    document.getElementById('btnDeleteRoute').addEventListener('click', () => {
+      const id = document.getElementById('routeId').value;
+      if (!id) return;
+      
+      localRoutes = localRoutes.filter(r => r.id !== id);
+      saveToStorage();
+      showToast("Rota excluída do sistema.", "error");
+      renderRoutes();
+      setCreateMode();
+    });
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').className = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+      document.getElementById('toastMsg').textContent = msg;
+      toast.className = `show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await db.auth.signOut(); window.location.href = 'login.html';
+    });
+
+    function escHtml(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSession();
+      addStopRow("");
+    });
+  })();
+</script>
+</body>
+</html>

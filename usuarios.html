@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Gestão de Usuários</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Apenas o que não existe no dashboard.css */
+    .section-block {
+      margin-bottom: 30px;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .section-label h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .section-label i {
+      font-size: 0.95rem;
+    }
+
+    .count-badge {
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 11px;
+      font-size: 0.75rem;
+      color: var(--text2);
+      font-weight: 600;
+    }
+
+    /* Badges de roles */
+    .badge.aluno {
+      background: rgba(115, 255, 187, 0.1);
+      color: #73ffbb;
+      border: 1px solid rgba(115, 255, 187, 0.2);
+    }
+
+    .badge.responsavel {
+      background: rgba(255, 198, 115, 0.1);
+      color: #ffc673;
+      border: 1px solid rgba(255, 198, 115, 0.2);
+    }
+
+    .badge.motorista {
+      background: rgba(115, 206, 255, 0.1);
+      color: #73ceff;
+      border: 1px solid rgba(115, 206, 255, 0.2);
+    }
+
+    /* Info do usuário no modal */
+    .modal-user-info {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: var(--text2);
+    }
+
+    .modal-user-info strong {
+      display: block;
+      color: var(--text);
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+    }
+
+    /* Estado vazio / erro */
+    .state-row td {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.88rem;
+      padding: 24px !important;
+    }
+
+    .state-row.error td { color: #ff7d7d; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+      z-index: 99999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform .25s ease, opacity .25s ease;
+      pointer-events: none;
+    }
+
+    #toast.show       { transform: translateY(0); opacity: 1; }
+    #toast.success    { border-color: #73ffbb; }
+    #toast.success i  { color: #73ffbb; }
+    #toast.error      { border-color: #ff7d7d; }
+    #toast.error i    { color: #ff7d7d; }
+
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span>Rota Segura</span>
+    </div>
+
+    <nav class="menu">
+      <a href="dashboard.html">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="usuarios.html" class="active">
+        <i class="fa-solid fa-user-graduate"></i>
+        <span>Gestão de Usuários</span>
+      </a>
+      <a href="onibus.html">
+        <i class="fa-solid fa-bus"></i>
+        <span>Ônibus</span>
+      </a>
+      <a href="rotas.html">
+        <i class="fa-solid fa-route"></i>
+        <span>Rotas</span>
+      </a>
+      <a href="alertas.html">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Alertas</span>
+      </a>
+      <a href="mapa.html">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Mapa de Guaíra</span>
+      </a>
+      <button id="logoutBtn" class="btn-logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Sair do Sistema</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Desenvolvido por <b>CastlesteinSecurity</b>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <header class="topbar">
+      <div>
+        <h1>Gestão de Usuários</h1>
+        <p>Controle de permissões e acessos do sistema</p>
+      </div>
+      <div class="profile">
+        <div class="profile-text">
+          <span id="Username">Buscando...</span>
+          <small>Administrador</small>
+        </div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <div class="section-block">
+      <div class="section-label">
+        <i class="fa-solid fa-user-shield" style="color: var(--primary);"></i>
+        <h2>Administradores</h2>
+        <span class="count-badge" id="countAdmin">0</span>
+      </div>
+      <div class="panel" style="padding: 0; margin-top: 12px;">
+        <div class="user-table-wrapper">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Nível de Acesso</th>
+                <th style="width:60px; text-align:center;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyAdmin">
+              <tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">
+        <i class="fa-solid fa-id-card" style="color: #73ceff;"></i>
+        <h2>Motoristas</h2>
+        <span class="count-badge" id="countMotorista">0</span>
+      </div>
+      <div class="panel" style="padding: 0; margin-top: 12px;">
+        <div class="user-table-wrapper">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Nível de Acesso</th>
+                <th style="width:60px; text-align:center;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyMotorista">
+              <tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">
+        <i class="fa-solid fa-user-graduate" style="color: #73ffbb;"></i>
+        <h2>Alunos</h2>
+        <span class="count-badge" id="countAluno">0</span>
+      </div>
+      <div class="panel" style="padding: 0; margin-top: 12px;">
+        <div class="user-table-wrapper">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Nível de Acesso</th>
+                <th style="width:60px; text-align:center;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyAluno">
+              <tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">
+        <i class="fa-solid fa-person-chalkboard" style="color: #ffc673;"></i>
+        <h2>Responsáveis</h2>
+        <span class="count-badge" id="countResp">0</span>
+      </div>
+      <div class="panel" style="padding: 0; margin-top: 12px;">
+        <div class="user-table-wrapper">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Nível de Acesso</th>
+                <th style="width:60px; text-align:center;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyResp">
+              <tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="editModal" class="modal" role="dialog" aria-modal="true">
+  <div class="modal-content">
+    <h3>Alterar Permissão do Usuário</h3>
+
+    <div class="modal-user-info">
+      <strong id="modalUserName">—</strong>
+      <span id="modalUserEmail">—</span>
+    </div>
+
+    <input type="hidden" id="editUserId">
+
+    <div class="input-box">
+      <label for="editUserRole">Cargo / Nível de Acesso</label>
+      <select id="editUserRole">
+        <option value="administrador">Administrador</option>
+        <option value="motorista">Motorista</option>
+        <option value="aluno">Aluno</option>
+        <option value="responsavel">Responsável</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnCancelModal">Cancelar</button>
+      <button class="btn-save"   id="btnSaveModal">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">
+  <i id="toastIcon"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  (() => {
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ROLES = {
+      administrador: { label: 'ADMINISTRADOR', cssClass: 'admin',      tbody: 'tbodyAdmin',     count: 'countAdmin' },
+      motorista:     { label: 'MOTORISTA',     cssClass: 'motorista',  tbody: 'tbodyMotorista', count: 'countMotorista' },
+      aluno:         { label: 'ALUNO',          cssClass: 'aluno',      tbody: 'tbodyAluno',     count: 'countAluno' },
+      responsavel:   { label: 'RESPONSÁVEL',    cssClass: 'responsavel', tbody: 'tbodyResp',      count: 'countResp'  },
+    };
+
+    /* ── SESSÃO E VERIFICAÇÃO DE PERMISSÃO ── */
+    async function checkSession() {
+      const { data: { user }, error: authError } = await db.auth.getUser();
+      if (authError || !user) { 
+        window.location.href = 'login.html'; 
+        return; 
+      }
+
+      const { data: profile, error: profError } = await db
+        .from('profiles')
+        .select('display_name, role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profError || !profile || profile.role?.toLowerCase() !== 'administrador') {
+        alert('Acesso negado. Esta página é restrita para administradores.');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      document.getElementById('Username').innerText =
+        profile.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
+
+      fetchUsers();
+    }
+
+    /* ── FETCH USUÁRIOS ── */
+    async function fetchUsers() {
+      Object.values(ROLES).forEach(r => {
+        document.getElementById(r.tbody).innerHTML =
+          `<tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+        document.getElementById(r.count).textContent = '0';
+      });
+
+      const { data: profiles, error } = await db
+        .from('profiles')
+        .select('id, display_name, email, role')
+        .order('display_name', { ascending: true });
+
+      if (error) {
+        Object.values(ROLES).forEach(r => {
+          document.getElementById(r.tbody).innerHTML =
+            `<tr class="state-row error"><td colspan="4"><i class="fa-solid fa-circle-xmark"></i> Erro ao carregar dados.</td></tr>`;
+        });
+        showToast('Erro ao buscar perfis: ' + error.message, 'error');
+        return;
+      }
+
+      // Cria os grupos dinamicamente com base nas chaves do ROLES
+      const groups = { administrador: [], motorista: [], aluno: [], responsavel: [] };
+      
+      (profiles || []).forEach(u => {
+        const role = u.role?.toLowerCase();
+        if (groups[role]) {
+          groups[role].push(u);
+        } else {
+          groups['aluno'].push(u); 
+        }
+      });
+
+      Object.entries(groups).forEach(([role, users]) => {
+        const cfg   = ROLES[role];
+        const tbody = document.getElementById(cfg.tbody);
+        document.getElementById(cfg.count).textContent = users.length;
+
+        if (!users.length) {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="4">Nenhum usuário neste grupo.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = users.map(u => {
+          const name  = escHtml(u.display_name || 'Sem nome');
+          const email = escHtml(u.email || 'N/A');
+          const userRole = escHtml(u.role || 'aluno');
+          const cfg2  = ROLES[userRole.toLowerCase()] || ROLES['aluno'];
+          
+          return `
+            <tr>
+              <td>${name}</td>
+              <td style="color: var(--text2);">${email}</td>
+              <td><span class="badge ${cfg2.cssClass}">${cfg2.label}</span></td>
+              <td style="text-align:center;">
+                <button class="btn-action"
+                  data-id="${escHtml(u.id)}"
+                  data-role="${userRole}"
+                  data-name="${name}"
+                  data-email="${email}"
+                  title="Editar permissão">
+                  <i class="fa-solid fa-user-gear"></i>
+                </button>
+              </td>
+            </tr>`;
+        }).join('');
+      });
+
+      document.querySelectorAll('.btn-action[data-id]').forEach(btn => {
+        btn.addEventListener('click', () =>
+          openModal(btn.dataset.id, btn.dataset.role, btn.dataset.name, btn.dataset.email));
+      });
+    }
+
+    /* ── MODAL DE EDIÇÃO ── */
+    const modal     = document.getElementById('editModal');
+    const inputId   = document.getElementById('editUserId');
+    const inputRole = document.getElementById('editUserRole');
+    const btnSave   = document.getElementById('btnSaveModal');
+
+    function openModal(id, role, name, email) {
+      inputId.value   = id;
+      inputRole.value = role.toLowerCase(); 
+      document.getElementById('modalUserName').textContent  = name;
+      document.getElementById('modalUserEmail').textContent = email;
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() { modal.style.display = 'none'; }
+
+    document.getElementById('btnCancelModal').addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    /* ── SALVAR ALTERAÇÃO NO BANCO ── */
+    btnSave.addEventListener('click', async () => {
+      const targetId = inputId.value;
+      const newRole  = inputRole.value;
+
+      if (!targetId) return;
+
+      btnSave.disabled = true;
+      btnSave.textContent = 'Salvando...';
+
+      const { error } = await db
+        .from('profiles')
+        .update({ 
+          role: newRole, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', targetId);
+
+      btnSave.disabled = false;
+      btnSave.textContent = 'Salvar Alterações';
+
+      if (error) {
+        showToast('Erro ao atualizar: ' + error.message, 'error');
+      } else {
+        closeModal();
+        showToast('Permissão atualizada com sucesso.', 'success');
+        fetchUsers(); 
+      }
+    });
+
+    /* ── LOGOUT ── */
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const { error } = await db.auth.signOut();
+      if (!error) window.location.href = 'login.html';
+      else showToast('Erro ao deslogar: ' + error.message, 'error');
+    });
+
+    /* ── TOAST NOTIFICAÇÕES ── */
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').className =
+        type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+      document.getElementById('toastMsg').textContent = msg;
+      toast.className = `show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+    }
+
+    /* ── SANITIZAÇÃO (ANTI-XSS) ── */
+    function escHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+</body>
+</html>

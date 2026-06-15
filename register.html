@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Session</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @font-face {
+            font-family: Gont;
+            src: url(Gontserrat-Bold.ttf) format('truetype');
+        }
+        @font-face {
+            font-family: GontBlack;
+            src: url(Gontserrat-Black.ttf) format('truetype');
+        }
+        @font-face {
+            font-family: R1;
+            src: url(Raleway-Regular.woff) format('woff');
+        }
+        @font-face {
+            font-family: R2;
+            src: url(Raleway-SemiBold.woff) format('woff');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e2035;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 90vw;
+            max-width: 1100px;
+            height: 80vh;
+            max-height: 620px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+
+        .panel-right {
+            position: relative;
+            width: 45%;
+            flex-shrink: 0;
+            overflow: hidden;
+            order: 2;
+        }
+
+        .panel-right img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.75);
+        }
+
+        .panel-right::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(30, 32, 53, 0.15) 0%,
+                rgba(30, 32, 53, 0.65) 100%
+            );
+        }
+
+        .logo {
+            position: absolute;
+            top: 28px;
+            right: 28px;
+            z-index: 10;
+            font-family: R2, 'Segoe UI', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        a {
+            color: #fff;
+            text-decoration: none;
+            font-family: R1, 'Segoe UI', sans-serif;
+        }
+
+        .panel-right-text {
+            position: absolute;
+            bottom: 48px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 0 32px;
+            color: #fff;
+        }
+
+        .panel-right-text h3 {
+            font-family: R2, 'Segoe UI', sans-serif;
+            font-size: 1.55rem;
+            font-weight: 600;
+            line-height: 1.35;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .dots span {
+            width: 24px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.35);
+        }
+        .dots span.active {
+            background: #fff;
+            width: 36px;
+        }
+
+        .panel-left {
+            flex: 1;
+            background: #252841;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 56px 52px;
+            order: 1;
+        }
+
+        .panel-left h1 {
+            font-family: GontBlack, R2, 'Segoe UI', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .panel-left h2 {
+            font-family: R1, 'Segoe UI', sans-serif;
+            font-size: 0.95rem;
+            color: #a0a3c4;
+            font-weight: 400;
+            margin-bottom: 36px;
+        }
+
+        .panel-left h2 a {
+            color: #d9fced;
+            text-decoration: none;
+            font-family: R1, 'Segoe UI', sans-serif;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .panel-left h2 a:hover {
+            border-bottom-color: #abd2fa;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .input-group input {
+            height: 48px;
+            width: 100%;
+            background: #2d3154;
+            border: 1px solid #3a3e5e;
+            border-radius: 12px;
+            padding: 0 20px;
+            color: #fff;
+            font-family: R1, 'Segoe UI', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.25s ease, background 0.25s ease;
+        }
+
+        .input-group input::placeholder {
+            color: #5a5f82;
+        }
+
+        .input-group input:focus {
+            border-color: #d9fced;
+            background: #333866;
+        }
+
+        .btn-login {
+            margin-top: 24px;
+            width: 100%;
+            height: 48px;
+            background: #d9fced;
+            color: #1a1f3a;
+            border: none;
+            border-radius: 12px;
+            font-family: Gont, R2, 'Segoe UI', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.25s ease, transform 0.2s ease;
+        }
+
+        .btn-login:hover {
+            background: #abd2fa;
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            background: #3a3e5e;
+            color: #5a5f82;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Elemento de feedback de texto */
+        .feedback-msg {
+            margin-top: 15px;
+            font-family: R1, 'Segoe UI', sans-serif;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        @media (max-width: 700px) {
+            .wrapper { flex-direction: column; width: 95vw; height: auto; }
+            .panel-right { width: 100%; height: 220px; order: 1; }
+            .panel-left { order: 2; padding: 36px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div class="panel-left">
+        <h1>Cadastro</h1>
+        <h2>Já tem uma conta? <a href="login.html">Entre aqui</a></h2>
+
+        <form id="registerForm">
+            <div class="input-group">
+                <input type="text" id="username" name="username" placeholder="Nome de Usuário" minlength="3" required>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" name="email" placeholder="E-mail" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" name="password" placeholder="Senha (mínimo 6 caracteres)" minlength="6" required>
+            </div>
+            <button class="btn-login" id="btnSubmit" type="submit">REGISTRAR</button>
+        </form>
+        
+        <div id="feedback" class="feedback-msg"></div>
+    </div>
+
+    <div class="panel-right">
+        <img src="blue2.jpg" alt="background">
+        <div class="logo">
+            <a href="https://github.com/Wormkt" target="_blank">Dev: ParallaxSec</a>    
+        </div>
+        <div class="panel-right-text">
+            <h3>Crie sua conta para<br>entrar no Rota Segura</h3>
+            <div class="dots">
+                <span></span>
+                <span></span>
+                <span class="active"></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    (() => {
+        const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU"; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const form = document.getElementById('registerForm');
+        const feedback = document.getElementById('feedback');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Bloqueia cliques repetidos enquanto processa
+            btnSubmit.disabled = true;
+            feedback.style.color = "#a0a3c4";
+            feedback.innerText = "Processando cadastro...";
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        display_name: username
+                    }
+                }
+            });
+
+            btnSubmit.disabled = false;
+
+            if (error) {
+                feedback.style.color = "#ff6b6b"; 
+                feedback.innerText = "Erro: " + error.message;
+            } else {
+                // Tratamento caso a autoverificação de e-mail esteja ativada ou não no painel do Supabase
+                if (data?.session) {
+                    feedback.style.color = "#73ffbb";
+                    feedback.innerText = "Cadastro realizado! Redirecionando...";
+                    setTimeout(() => {
+                        window.location.href = "dashboard.html";
+                    }, 2000);
+                } else {
+                    feedback.style.color = "#abd2fa";
+                    feedback.innerText = "Sucesso! Verifique seu e-mail para confirmar o cadastro.";
+                    form.reset();
+                }
+            }
+        });
+    })();
+</script>
+
+</body>
+</html>
