@@ -5,26 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rota Segura | Dashboard</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="dashboard.css">
-  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-/* ==========================================================================
-       PADRONIZAÇÃO DA SIDEBAR & MENUS
-       ========================================================================== */
+    /* ==========================================================================
+       VARIÁVEIS DE SISTEMA E PALETA DE CORES (ORIGINAIS)
+    ========================================================================== */
+    :root {
+      --bg:        #1d2033;
+      --sidebar:   #191b2d;
+      --card:      #252841;
+      --card-hover:#2f3457;
+      --primary:   #abd2fa;
+      --text:      #ffffff;
+      --text2:     #9ea3c7;
+      --border:    rgba(255,255,255,0.05);
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .dashboard {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ==========================================================================
+       SIDEBAR — ORIGINAL INTACTA
+    ========================================================================== */
     .sidebar {
       width: 270px;
       background: var(--sidebar);
-      padding: 24px;
+      padding: 30px;
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
     }
 
+    .logo {
+      margin-bottom: 50px;
+    }
+
+    .logo span {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu a {
+      text-decoration: none;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      transition: .25s;
+    }
+
+    .menu a i { width: 20px; }
+
+    .menu a:hover,
+    .menu a.active {
+      background: var(--card);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    .menu a.active {
+      border-left: 3px solid var(--primary);
+    }
+
     .btn-logout {
-      margin-top: auto;
       background: none;
       border: none;
       color: #ff6b6b;
@@ -39,19 +108,188 @@
       border-radius: 14px;
       transition: .25s;
       font-family: inherit;
+      margin-top: 10px;
     }
+
     .btn-logout:hover {
-      background: rgba(255, 107, 107, 0.08);
+      background: rgba(255,107,107,0.08);
       color: #ff8585;
       transform: translateX(4px);
     }
-    #menuGestao {
-      display: none !important;
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-size: 12px;
+      color: #6d739d;
+    }
+
+    #menuGestao { display: none !important; }
+
+    /* ==========================================================================
+       CONTEÚDO E TOPBAR
+    ========================================================================== */
+    .content {
+      flex: 1;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .topbar h1 { font-size: 2rem; }
+
+    /* Subtítulo técnico sob o título */
+    .topbar-sub {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .topbar-sub p {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text2);
+      letter-spacing: 0.04em;
+    }
+
+    .topbar-sub .dot {
+      color: var(--text2);
+      opacity: 0.4;
+    }
+
+    .topbar-clock {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--primary);
+      opacity: 0.8;
+    }
+
+    /* Badge de status online */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(115,255,187,0.07);
+      border: 1px solid rgba(115,255,187,0.2);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #73ffbb;
+    }
+
+    .status-badge i { animation: blink 1.6s infinite ease-in-out; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 1; }
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .profile-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .profile-text { text-align: right; }
+
+    .profile-text span {
+      display: block;
+      font-weight: 600;
+    }
+
+    .profile-text small {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text2);
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d9fced, #abd2fa);
     }
 
     /* ==========================================================================
-       COMPONENTE: LOBO FRONTAL (CENTRAL DE EXECUÇÃO REPOSICIONADA)
-       ========================================================================== */
+       CARDS DE INDICADORES — ORIGINAL + TOQUE TÉCNICO
+    ========================================================================== */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      margin-bottom: 35px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 24px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: .25s;
+      border: 1px solid var(--border);
+    }
+
+    .card:hover {
+      background: var(--card-hover);
+      transform: translateY(-4px);
+    }
+
+    .card-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: rgba(171,210,250,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* Label em mono, valor grande igual ao original */
+    .card span {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text2);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+    }
+
+    .card h2 {
+      margin: 6px 0;
+      font-size: 1.8rem;
+    }
+
+    .card p {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: #73ffbb;
+    }
+
+    .alert-card p { color: #ff7d7d; }
+
+    /* ==========================================================================
+       PAINEL LOBO FRONTAL — ORIGINAL + ELEMENTOS TÉCNICOS
+    ========================================================================== */
     .lobe-container {
       background: var(--card);
       border: 1px solid var(--border);
@@ -64,6 +302,7 @@
       align-items: center;
     }
 
+    /* Badge "EXECUTANDO" — original */
     .lobe-status {
       position: absolute;
       top: 25px;
@@ -73,18 +312,19 @@
       gap: 7px;
       padding: 7px 14px;
       border-radius: 999px;
-      background: rgba(115, 255, 187, 0.08);
-      border: 1px solid rgba(115, 255, 187, 0.3);
+      background: rgba(115,255,187,0.08);
+      border: 1px solid rgba(115,255,187,0.3);
       color: #73ffbb;
+      font-family: var(--mono);
       font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 1.5px;
       z-index: 3;
     }
-    .lobe-status i {
-      animation: boltFlash 1.6s infinite ease-in-out;
-    }
 
+    .lobe-status i { animation: blink 1.6s infinite ease-in-out; }
+
+    /* Cabeçalho com linha técnica adicional */
     .lobe-header {
       position: absolute;
       top: 35px;
@@ -97,7 +337,7 @@
       font-size: 1.4rem;
       font-weight: 700;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #fff;
     }
 
@@ -105,9 +345,27 @@
       color: var(--text2);
       font-size: 0.85rem;
       line-height: 1.55;
+      margin-bottom: 10px;
     }
 
-    /* Diagrama de conexões neurais (SVG com caminhos recalculados) */
+    /* Linha técnica extra sob a descrição */
+    .lobe-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lobe-meta-item {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--text2);
+      opacity: 0.6;
+      letter-spacing: 0.05em;
+    }
+
+    .lobe-meta-sep { color: var(--text2); opacity: 0.2; font-size: 0.7rem; }
+
+    /* SVG de sinais — original */
     .signal-svg {
       position: absolute;
       inset: 0;
@@ -119,7 +377,7 @@
 
     .signal-line {
       fill: none;
-      stroke: rgba(171, 210, 250, 0.15);
+      stroke: rgba(171,210,250,0.15);
       stroke-width: 2;
     }
 
@@ -129,14 +387,16 @@
       stroke-width: 2.5;
       stroke-linecap: round;
       stroke-dasharray: 20 600;
-      filter: drop-shadow(0 0 4px rgba(115, 255, 187, 0.8));
+      filter: drop-shadow(0 0 4px rgba(115,255,187,0.8));
       animation: signalFlow 4s linear infinite;
     }
 
-    /* Núcleo Centralizadorizado na Esquerda Dinâmica */
+    @keyframes signalFlow { to { stroke-dashoffset: -620; } }
+
+    /* Núcleo — original */
     .brain-core {
       position: absolute;
-      top: 60%; /* Descido ligeiramente para não colidir com o cabeçalho */
+      top: 60%;
       left: 20%;
       transform: translate(-50%, -50%);
       z-index: 2;
@@ -149,19 +409,18 @@
       position: relative;
       width: 120px;
       height: 120px;
-      background: rgba(171, 210, 250, 0.05);
+      background: rgba(171,210,250,0.05);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 40px rgba(171, 210, 250, 0.03) inset;
     }
 
     .lobe-core-wrap::before,
     .lobe-core-wrap::after {
       content: '';
       position: absolute;
-      border: 2px solid rgba(171, 210, 250, 0.3);
+      border: 2px solid rgba(171,210,250,0.3);
       border-radius: 50%;
       width: 100%;
       height: 100%;
@@ -169,8 +428,12 @@
       animation: execPulse 2.4s infinite ease-out;
     }
 
-    .lobe-core-wrap::after {
-      animation-delay: 1.2s;
+    .lobe-core-wrap::after { animation-delay: 1.2s; }
+
+    @keyframes execPulse {
+      0%   { transform: scale(0.9); opacity: 0; }
+      15%  { opacity: 0.4; }
+      100% { transform: scale(1.5); opacity: 0; border-color: #73ffbb; }
     }
 
     .lobe-core {
@@ -187,7 +450,6 @@
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      color: transparent;
       animation: coreGlow 3s infinite ease-in-out;
     }
 
@@ -196,12 +458,23 @@
       position: absolute;
       inset: -14px;
       border-radius: 50%;
-      border: 2px dashed rgba(115, 255, 187, 0.4);
+      border: 2px dashed rgba(115,255,187,0.4);
       animation: spinExec 6s linear infinite;
+    }
+
+    @keyframes coreGlow {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(171,210,250,0.3)); }
+      50%       { filter: drop-shadow(0 0 20px rgba(115,255,187,0.5)); }
+    }
+
+    @keyframes spinExec {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
     .brain-label {
       margin-top: 14px;
+      font-family: var(--mono);
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 2px;
@@ -209,7 +482,7 @@
       color: #73ffbb;
     }
 
-    /* Módulos da direita alinhados em Grid/Flex Absoluto */
+    /* Nós da direita — original + badge técnico */
     .nodes-container {
       position: absolute;
       right: 8%;
@@ -217,7 +490,7 @@
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
-      gap: 24px; /* Espaçamento simétrico e idêntico entre os nós */
+      gap: 24px;
       z-index: 2;
     }
 
@@ -227,20 +500,21 @@
       gap: 12px;
       padding: 10px 20px;
       border-radius: 999px;
-      background: rgba(171, 210, 250, 0.03);
+      background: rgba(171,210,250,0.03);
       border: 1px solid var(--border);
       color: #fff;
       font-size: 0.82rem;
       font-weight: 600;
       white-space: nowrap;
-      min-width: 140px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: 0.3s;
+      min-width: 160px;
+      transition: .3s;
+      text-decoration: none;
     }
-    
+
     .signal-node:hover {
-      border-color: rgba(115, 255, 187, 0.4);
-      background: rgba(115, 255, 187, 0.02);
+      border-color: rgba(115,255,187,0.4);
+      background: rgba(115,255,187,0.02);
+      transform: translateX(-4px);
     }
 
     .signal-node i {
@@ -250,37 +524,51 @@
       text-align: center;
     }
 
-    /* Animações CSS */
-    @keyframes signalFlow {
-      to { stroke-dashoffset: -620; }
+    /* Badge de status técnico dentro do nó */
+    .node-badge {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(115,255,187,0.08);
+      color: #73ffbb;
+      border: 1px solid rgba(115,255,187,0.15);
     }
 
-    @keyframes execPulse {
-      0% { transform: scale(0.9); opacity: 0; }
-      15% { opacity: 0.4; }
-      100% { transform: scale(1.5); opacity: 0; border-color: #73ffbb; }
+    .node-badge.warn {
+      background: rgba(255,180,50,0.08);
+      color: #f5be5e;
+      border-color: rgba(255,180,50,0.2);
     }
 
-    @keyframes coreGlow {
-      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(171, 210, 250, 0.3)); }
-      50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(115, 255, 187, 0.5)); }
-    }
-
-    @keyframes spinExec {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    /* ==========================================================================
+       RESPONSIVIDADE — ORIGINAL
+    ========================================================================== */
+    @media (max-width: 1200px) {
+      .cards { grid-template-columns: repeat(2,1fr); }
     }
 
     @media (max-width: 900px) {
       .signal-svg, .nodes-container { display: none; }
-      .lobe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: auto; padding: 40px 20px; }
+      .lobe-container {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: auto;
+        padding: 40px 20px;
+      }
       .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 30px; }
-      .brain-core { position: relative; top: auto; left: auto; transform: none; }
+      .brain-core  { position: relative; top: auto; left: auto; transform: none; }
     }
 
-    @keyframes boltFlash {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
+    @media (max-width: 800px) {
+      .sidebar { display: none; }
+      .cards   { grid-template-columns: 1fr; }
+      .content { padding: 25px; }
     }
   </style>
 </head>
@@ -288,6 +576,7 @@
 
 <div class="dashboard">
 
+  <!-- ===================== SIDEBAR ORIGINAL ===================== -->
   <aside class="sidebar">
     <div class="logo">
       <span>Rota Segura</span>
@@ -335,32 +624,45 @@
     </div>
   </aside>
 
+  <!-- ===================== CONTEÚDO ===================== -->
   <main class="content">
 
     <header class="topbar">
       <div>
         <h1>Analytics</h1>
-        <p>Visão geral do sistema</p>
+        <div class="topbar-sub">
+          <p>visão geral do sistema</p>
+          <span class="dot">·</span>
+          <span class="topbar-clock" id="clock">--:--:--</span>
+          <span class="dot">·</span>
+          <p>build 2.4.1</p>
+        </div>
       </div>
 
       <div class="profile">
-        <div class="profile-text">
-          <span id="Username">Carregando...</span>
-          <small id="UserRole">Verificando...</small>
+        <div class="profile-right">
+          <div class="profile-text">
+            <span id="Username">Carregando...</span>
+            <small id="UserRole">Verificando...</small>
+          </div>
+          <div class="status-badge">
+            <i class="fa-solid fa-circle" style="font-size:0.45rem;"></i> ONLINE
+          </div>
         </div>
         <div class="avatar"></div>
       </div>
     </header>
 
+    <!-- Cards -->
     <section class="cards">
       <div class="card">
         <div class="card-icon">
           <i class="fa-solid fa-user-group"></i>
         </div>
         <div>
-          <span>Total de Alunos</span>
+          <span>total_alunos</span>
           <h2 id="totalAlunosCard">...</h2>
-          <p>Sincronizado</p>
+          <p>↑ sincronizado</p>
         </div>
       </div>
 
@@ -369,9 +671,9 @@
           <i class="fa-solid fa-id-card"></i>
         </div>
         <div>
-          <span>Motoristas Ativos</span>
+          <span>motoristas_ativos</span>
           <h2 id="totalMotoristasCard">...</h2>
-          <p>Sincronizado</p>
+          <p>↑ sincronizado</p>
         </div>
       </div>
 
@@ -380,9 +682,9 @@
           <i class="fa-solid fa-bus"></i>
         </div>
         <div>
-          <span>Rotas em Curso</span>
+          <span>rotas_em_curso</span>
           <h2>--</h2>
-          <p>Sem dados ativos</p>
+          <p>sem dados ativos</p>
         </div>
       </div>
 
@@ -391,14 +693,15 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div>
-          <span>Alertas</span>
+          <span>sys.alertas</span>
           <h2>--</h2>
-          <p>Nenhuma ocorrência</p>
+          <p>nenhuma ocorrência</p>
         </div>
       </div>
     </section>
 
-<section class="lobe-container">
+    <!-- Lobo Frontal -->
+    <section class="lobe-container">
       <div class="lobe-status">
         <i class="fa-solid fa-bolt"></i> EXECUTANDO
       </div>
@@ -406,12 +709,20 @@
       <div class="lobe-header">
         <h2>Lobo Frontal Operacional</h2>
         <p>Núcleo de execução do sistema. Sinais de comando são despachados em tempo real para os módulos da frota.</p>
+        <div class="lobe-meta">
+          <span class="lobe-meta-item">uptime <span id="uptime">--:--:--</span></span>
+          <span class="lobe-meta-sep">|</span>
+          <span class="lobe-meta-item">kernel 6.8.0-lts</span>
+          <span class="lobe-meta-sep">|</span>
+          <span class="lobe-meta-item">pid 0x3a2f</span>
+        </div>
       </div>
 
       <svg class="signal-svg" viewBox="0 0 1000 400" preserveAspectRatio="none">
         <defs>
-          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115, 255, 187, 0.4)"/>
+          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115,255,187,0.4)"/>
           </marker>
         </defs>
 
@@ -420,10 +731,10 @@
         <path class="signal-line" d="M200,240 C400,260 600,250 800,245" marker-end="url(#signalArrow)"/>
         <path class="signal-line" d="M200,240 C400,310 600,300 800,295" marker-end="url(#signalArrow)"/>
 
-        <path class="signal-pulse" d="M200,240 C400,160 600,140 800,145" style="animation-delay: 0s;"/>
-        <path class="signal-pulse" d="M200,240 C400,210 600,195 800,195" style="animation-delay: 0.6s;"/>
-        <path class="signal-pulse" d="M200,240 C400,260 600,250 800,245" style="animation-delay: 1.2s;"/>
-        <path class="signal-pulse" d="M200,240 C400,310 600,300 800,295" style="animation-delay: 1.8s;"/>
+        <path class="signal-pulse" d="M200,240 C400,160 600,140 800,145" style="animation-delay:0s"/>
+        <path class="signal-pulse" d="M200,240 C400,210 600,195 800,195" style="animation-delay:0.6s"/>
+        <path class="signal-pulse" d="M200,240 C400,260 600,250 800,245" style="animation-delay:1.2s"/>
+        <path class="signal-pulse" d="M200,240 C400,310 600,300 800,295" style="animation-delay:1.8s"/>
       </svg>
 
       <div class="brain-core">
@@ -434,18 +745,26 @@
       </div>
 
       <div class="nodes-container">
-        <div class="signal-node">
-          <i class="fa-solid fa-bus"></i><span>Ônibus</span>
-        </div>
-        <div class="signal-node">
-          <i class="fa-solid fa-route"></i><span>Rotas</span>
-        </div>
-        <div class="signal-node">
-          <i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span>
-        </div>
-        <div class="signal-node">
-          <i class="fa-solid fa-user-group"></i><span>Usuários</span>
-        </div>
+        <a href="onibus.html" class="signal-node">
+          <i class="fa-solid fa-bus"></i>
+          <span>Ônibus</span>
+          <span class="node-badge">ONLINE</span>
+        </a>
+        <a href="rotas.html" class="signal-node">
+          <i class="fa-solid fa-route"></i>
+          <span>Rotas</span>
+          <span class="node-badge">ONLINE</span>
+        </a>
+        <a href="alertas.html" class="signal-node">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Alertas</span>
+          <span class="node-badge warn">STANDBY</span>
+        </a>
+        <a href="usuarios.html" class="signal-node">
+          <i class="fa-solid fa-user-group"></i>
+          <span>Usuários</span>
+          <span class="node-badge">ONLINE</span>
+        </a>
       </div>
     </section>
 
@@ -454,20 +773,33 @@
 
 <script>
   (() => {
-    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co"; 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+    /* ---- Relógio ---- */
+    function tick() {
+      const el = document.getElementById('clock');
+      if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    }
+    tick(); setInterval(tick, 1000);
 
+    /* ---- Uptime ---- */
+    const startTime = Date.now();
+    setInterval(() => {
+      const s   = Math.floor((Date.now() - startTime) / 1000);
+      const hh  = String(Math.floor(s / 3600)).padStart(2,'0');
+      const mm  = String(Math.floor((s % 3600) / 60)).padStart(2,'0');
+      const ss  = String(s % 60).padStart(2,'0');
+      const el  = document.getElementById('uptime');
+      if (el) el.textContent = `${hh}:${mm}:${ss}`;
+    }, 1000);
+
+    /* ---- Supabase ---- */
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function checkSession() {
       try {
         const { data: { user }, error: authError } = await db.auth.getUser();
-
-        // 1. Se não estiver logado, vai para a tela de login comum
-        if (authError || !user) {
-          window.location.href = "login.html"; 
-          return;
-        }
+        if (authError || !user) { window.location.href = "login.html"; return; }
 
         const { data: profile } = await db
           .from('profiles')
@@ -476,37 +808,31 @@
           .maybeSingle();
 
         const userRole = (profile?.role || 'aluno').toLowerCase();
-        
-        // ==========================================================
-        // TRAVA DE SEGURANÇA: Bloqueia Alunos e Responsáveis nesta página
-        // ==========================================================
-        if (userRole === 'aluno' || userRole === 'responsavel' || userRole === 'motorista') {
-          // Redireciona para a tela correta deles (ex: mapa.html ou login-user.html)
-          window.location.href = "login-user.html"; 
-          return; // Para a execução do código imediatamente
-        }
-        // ==========================================================
 
-        const displayName = profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
+        if (['aluno','responsavel','motorista'].includes(userRole)) {
+          window.location.href = "login-user.html"; return;
+        }
+
+        const displayName = profile?.display_name
+          || user.user_metadata?.display_name
+          || user.email.split('@')[0];
 
         document.getElementById('Username').innerText = displayName;
-        
-        const roleLabels = { 
-          administrador: 'Administrador', 
-          motorista: 'Motorista', 
-          aluno: 'Aluno', 
-          responsavel: 'Responsável' 
+
+        const roleLabels = {
+          administrador: 'Administrador',
+          motorista:     'Motorista',
+          aluno:         'Aluno',
+          responsavel:   'Responsável'
         };
         document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
 
-        // Se for admin, exibe o menu de gestão
         if (userRole === 'administrador') {
           const menuG = document.getElementById('menuGestao');
-          if (menuG) menuG.style.setProperty('display', 'block', 'important');
+          if (menuG) menuG.style.setProperty('display', 'flex', 'important');
         }
 
         fetchAnalytics();
-
       } catch (err) {
         console.error("Erro crítico na sessão:", err);
         document.getElementById('Username').innerText = "Erro ao carregar";
@@ -516,27 +842,14 @@
     async function fetchAnalytics() {
       try {
         const { count: countAlunos, error: errAlunos } = await db
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'aluno');
-
-        if (!errAlunos && countAlunos !== null) {
-          document.getElementById('totalAlunosCard').innerText = countAlunos;
-        } else {
-          document.getElementById('totalAlunosCard').innerText = '0';
-        }
+          .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'aluno');
+        document.getElementById('totalAlunosCard').innerText =
+          (!errAlunos && countAlunos !== null) ? countAlunos : '0';
 
         const { count: countMotoristas, error: errMotoristas } = await db
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'motorista');
-
-        if (!errMotoristas && countMotoristas !== null) {
-          document.getElementById('totalMotoristasCard').innerText = countMotoristas;
-        } else {
-          document.getElementById('totalMotoristasCard').innerText = '0';
-        }
-
+          .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'motorista');
+        document.getElementById('totalMotoristasCard').innerText =
+          (!errMotoristas && countMotoristas !== null) ? countMotoristas : '0';
       } catch (err) {
         document.getElementById('totalAlunosCard').innerText = '0';
         document.getElementById('totalMotoristasCard').innerText = '0';
@@ -545,11 +858,8 @@
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       const { error } = await db.auth.signOut();
-      if (!error) {
-        window.location.href = "login.html";
-      } else {
-        alert("Erro ao tentar sair: " + error.message);
-      }
+      if (!error) window.location.href = "login.html";
+      else alert("Erro ao tentar sair: " + error.message);
     });
 
     document.addEventListener('DOMContentLoaded', checkSession);
