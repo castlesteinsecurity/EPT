@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rota Segura · Entrar</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-page:       #1e2035;
+            --bg-card:       #252841;
+            --bg-right:      #1c1e36;
+            --bg-input:      #2d3154;
+            --bg-input-focus:#333866;
+            --border:        #3a3e5e;
+            --border-bright: #4a4f7a;
+            --mint:          #d9fced;
+            --mint-glow:     rgba(217, 252, 237, 0.18);
+            --sky:           #abd2fa;
+            --text:          #ffffff;
+            --text-dim:      #a0a3c4;
+            --red:           #ff6b6b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
+            background: var(--bg-page);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(171, 210, 250, 0.06) 0%, transparent 55%),
+                radial-gradient(circle at 80% 75%, rgba(217, 252, 237, 0.06) 0%, transparent 55%);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        a { color: inherit; }
+
+        /* ── card shell (same shape as login.html's terminal-window) ── */
+        .card-shell {
+            position: relative;
+            width: 92vw;
+            max-width: 1120px;
+            height: 84vh;
+            max-height: 640px;
+            border-radius: 28px;
+            border: 1px solid var(--border-bright);
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+            display: flex;
+        }
+
+        /* ── left: form panel ── */
+        .panel-left {
+            flex: 1;
+            background: var(--bg-card);
+            padding: 52px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-dim);
+            margin-bottom: 36px;
+            letter-spacing: 0.5px;
+        }
+        .brand svg { color: var(--mint); width: 18px; height: 18px; flex-shrink: 0; }
+
+        .panel-left h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        .panel-left h1 span { color: var(--mint); }
+
+        .panel-left h2 {
+            font-size: 0.92rem;
+            color: var(--text-dim);
+            font-weight: 400;
+            margin-bottom: 40px;
+        }
+        .panel-left h2 a {
+            color: var(--sky);
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .panel-left h2 a:hover { border-bottom-color: var(--sky); }
+
+        /* ── inputs ── */
+        .input-group { margin-bottom: 18px; }
+
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .field-label svg { width: 13px; height: 13px; color: var(--mint); }
+
+        .field-wrap {
+            background: var(--bg-input);
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .field-wrap:focus-within {
+            border-color: var(--mint);
+            background: var(--bg-input-focus);
+            box-shadow: 0 0 0 3px var(--mint-glow);
+        }
+
+        .input-group input {
+            width: 100%;
+            height: 50px;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 0 20px;
+            color: var(--text);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.96rem;
+        }
+        .input-group input::placeholder { color: #5a5f82; }
+
+        /* ── forgot ── */
+        .forgot {
+            text-align: right;
+            font-size: 0.78rem;
+            margin-bottom: 8px;
+        }
+        .forgot a {
+            color: var(--text-dim);
+            text-decoration: none;
+            border-bottom: 1px dashed transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .forgot a:hover { color: var(--sky); border-bottom-color: var(--sky); }
+
+        .btn-enter {
+            margin-top: 6px;
+            width: 100%;
+            height: 52px;
+            background: var(--mint);
+            color: #1a1f3a;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        .btn-enter svg { width: 18px; height: 18px; }
+        .btn-enter:hover {
+            background: var(--sky);
+            box-shadow: 0 8px 24px rgba(171, 210, 250, 0.3);
+        }
+        .btn-enter:active { transform: translateY(1px); }
+
+        .feedback-msg {
+            margin-top: 16px;
+            font-size: 0.83rem;
+            min-height: 1.2em;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        /* ── right: illustration panel ── */
+        .panel-right {
+            width: 42%;
+            flex-shrink: 0;
+            background: var(--bg-right);
+            border-left: 1px solid var(--border);
+            padding: 44px 38px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* soft blobs */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(64px);
+            pointer-events: none;
+        }
+        .blob-1 { width: 260px; height: 260px; background: var(--mint); opacity: 0.07; top: -80px; right: -80px; }
+        .blob-2 { width: 220px; height: 220px; background: var(--sky); opacity: 0.08; bottom: -60px; left: -60px; }
+
+        /* route illustration */
+        .route-scene {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .route-scene svg { width: 100%; height: auto; }
+
+        /* animated bus along the road */
+        .bus-icon {
+            animation: busRide 4s ease-in-out infinite;
+        }
+        @keyframes busRide {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(12px); }
+        }
+
+        /* pulse dot on pin */
+        .pin-pulse {
+            animation: pingDot 2s ease-out infinite;
+            transform-origin: center;
+        }
+        @keyframes pingDot {
+            0% { opacity: 0.8; transform: scale(1); }
+            70% { opacity: 0; transform: scale(2.2); }
+            100% { opacity: 0; transform: scale(1); }
+        }
+
+        /* info cards under illustration */
+        .info-cards {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+        }
+        .info-card:nth-child(1) { animation-delay: 0.1s; }
+        .info-card:nth-child(2) { animation-delay: 0.25s; }
+        .info-card:nth-child(3) { animation-delay: 0.4s; }
+
+        .info-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: rgba(217, 252, 237, 0.09);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--mint);
+        }
+        .info-icon svg { width: 16px; height: 16px; }
+
+        .info-text { display: flex; flex-direction: column; gap: 2px; }
+        .info-text strong {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Quicksand', sans-serif;
+        }
+        .info-text span { font-size: 0.71rem; color: var(--text-dim); }
+
+        .dev-credit {
+            position: absolute;
+            bottom: 18px;
+            font-size: 0.7rem;
+            color: var(--border-bright);
+            text-decoration: none;
+            transition: color 0.2s;
+            z-index: 1;
+        }
+        .dev-credit:hover { color: var(--text-dim); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 760px) {
+            html, body { height: auto; overflow: auto; }
+            body { padding: 24px 0; }
+            .card-shell { width: 95vw; height: auto; max-height: none; flex-direction: column; border-radius: 20px; }
+            .panel-right { width: 100%; border-left: none; border-top: 1px solid var(--border); padding: 32px 28px; }
+            .panel-left { padding: 36px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card-shell">
+
+    <!-- ── LEFT: form ── -->
+    <div class="panel-left">
+
+        <div class="brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+                <circle cx="12" cy="10" r="2.4"/>
+            </svg>
+            Rota Segura
+        </div>
+
+        <h1>Bem-vindo <span>de volta!</span></h1>
+        <h2>Não tem conta? <a href="register.html">Cadastre-se aqui</a></h2>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label class="field-label" for="email">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                    E-mail
+                </label>
+                <div class="field-wrap">
+                    <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="field-label" for="password">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Senha
+                </label>
+                <div class="field-wrap">
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <div class="forgot"><a href="#">Esqueceu a senha?</a></div>
+
+            <button class="btn-enter" type="submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Entrar
+            </button>
+        </form>
+
+        <div id="feedback" class="feedback-msg"></div>
+    </div>
+
+    <!-- ── RIGHT: illustration ── -->
+    <div class="panel-right">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <!-- Bus / route SVG illustration -->
+        <div class="route-scene">
+            <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+                <!-- road -->
+                <rect x="10" y="130" width="260" height="36" rx="8" fill="#2d3154"/>
+                <!-- dashes -->
+                <rect x="28"  y="145" width="30" height="5" rx="2.5" fill="#3a3e5e"/>
+                <rect x="80"  y="145" width="30" height="5" rx="2.5" fill="#3a3e5e"/>
+                <rect x="132" y="145" width="30" height="5" rx="2.5" fill="#3a3e5e"/>
+                <rect x="184" y="145" width="30" height="5" rx="2.5" fill="#3a3e5e"/>
+                <rect x="236" y="145" width="28" height="5" rx="2.5" fill="#3a3e5e"/>
+
+                <!-- bus body -->
+                <g class="bus-icon">
+                    <rect x="60" y="90" width="100" height="52" rx="10" fill="#2d3154" stroke="#abd2fa" stroke-width="2"/>
+                    <!-- windows row -->
+                    <rect x="70"  y="98" width="20" height="14" rx="4" fill="#abd2fa" opacity="0.7"/>
+                    <rect x="98"  y="98" width="20" height="14" rx="4" fill="#abd2fa" opacity="0.7"/>
+                    <rect x="126" y="98" width="20" height="14" rx="4" fill="#abd2fa" opacity="0.7"/>
+                    <!-- door -->
+                    <rect x="140" y="116" width="14" height="22" rx="3" fill="#1c1e36" stroke="#3a3e5e" stroke-width="1.5"/>
+                    <!-- front bumper -->
+                    <rect x="60" y="132" width="100" height="8" rx="4" fill="#3a3e5e"/>
+                    <!-- headlight -->
+                    <circle cx="75" cy="125" r="5" fill="#d9fced" opacity="0.9"/>
+                    <circle cx="75" cy="125" r="3" fill="#fff"/>
+                    <!-- wheels -->
+                    <circle cx="88"  cy="142" r="10" fill="#1a1f3a" stroke="#4a4f7a" stroke-width="2"/>
+                    <circle cx="88"  cy="142" r="4"  fill="#4a4f7a"/>
+                    <circle cx="138" cy="142" r="10" fill="#1a1f3a" stroke="#4a4f7a" stroke-width="2"/>
+                    <circle cx="138" cy="142" r="4"  fill="#4a4f7a"/>
+                    <!-- label -->
+                    <text x="113" y="114" text-anchor="middle" font-size="7" fill="#a0a3c4" font-family="Nunito,sans-serif" font-weight="700">ESCOLAR</text>
+                </g>
+
+                <!-- route dots -->
+                <circle cx="30"  cy="70" r="6" fill="#3a3e5e"/>
+                <circle cx="80"  cy="45" r="6" fill="#3a3e5e"/>
+                <circle cx="140" cy="30" r="6" fill="#3a3e5e"/>
+                <circle cx="200" cy="45" r="6" fill="#3a3e5e"/>
+
+                <!-- destination pin -->
+                <circle cx="252" cy="60" r="6" fill="#d9fced" opacity="0.25" class="pin-pulse"/>
+                <circle cx="252" cy="60" r="6" fill="#d9fced"/>
+                <path d="M252 48 C252 48 245 56 245 62 a7 7 0 0 0 14 0 C259 56 252 48 252 48Z" fill="#d9fced"/>
+                <circle cx="252" cy="62" r="2.5" fill="#1a1f3a"/>
+
+                <!-- dotted path from stops to destination -->
+                <path d="M30 70 Q55 40 80 45 Q110 50 140 30 Q170 15 200 45 Q225 58 245 62"
+                      stroke="#3a3e5e" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>
+
+            </svg>
+        </div>
+
+        <!-- feature highlights -->
+        <div class="info-cards">
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/>
+                    </svg>
+                </div>
+                <div class="info-text">
+                    <strong>Rastreamento em tempo real</strong>
+                    <span>Veja onde o ônibus está agora</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div class="info-text">
+                    <strong>Notificações de chegada</strong>
+                    <span>Alertas antes do ônibus chegar</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="info-text">
+                    <strong>Rota segura garantida</strong>
+                    <span>Monitoramento de toda a trajetória</span>
+                </div>
+            </div>
+        </div>
+
+        <a class="dev-credit" href="https://github.com/castlesteinsecurity" target="_blank" rel="noopener">dev: CastlesteinSec</a>
+    </div>
+
+</div>
+
+<script>
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const feedback = document.getElementById('feedback');
+
+    function showFeedback(type, msg) {
+        const colors = { info: 'var(--text-dim)', ok: 'var(--mint)', error: 'var(--red)' };
+        feedback.style.color = colors[type] || colors.info;
+        feedback.innerText = msg;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email    = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        showFeedback('info', 'Verificando seus dados...');
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            showFeedback('error', 'E-mail ou senha incorretos. Tente novamente.');
+        } else {
+            showFeedback('ok', 'Tudo certo! Redirecionando...');
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1400);
+        }
+    });
+</script>
+</body>
+</html>
