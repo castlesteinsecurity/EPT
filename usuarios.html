@@ -369,6 +369,12 @@
         .select('id, display_name, email, role')
         .order('display_name', { ascending: true });
 
+      const userRole = (profile?.role || 'aluno').toLowerCase();
+
+      if (userRole === 'aluno' || userRole === 'responsavel' || userRole === 'motorista')
+        window.location.href = "login-user.html"
+        return;
+
       if (error) {
         Object.values(ROLES).forEach(r => {
           document.getElementById(r.tbody).innerHTML =
