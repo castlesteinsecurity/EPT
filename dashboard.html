@@ -463,6 +463,7 @@
       try {
         const { data: { user }, error: authError } = await db.auth.getUser();
 
+        // 1. Se não estiver logado, vai para a tela de login comum
         if (authError || !user) {
           window.location.href = "login.html"; 
           return;
@@ -475,6 +476,17 @@
           .maybeSingle();
 
         const userRole = (profile?.role || 'aluno').toLowerCase();
+        
+        // ==========================================================
+        // TRAVA DE SEGURANÇA: Bloqueia Alunos e Responsáveis nesta página
+        // ==========================================================
+        if (userRole === 'aluno' || userRole === 'responsavel' || userRole === 'motorista') {
+          // Redireciona para a tela correta deles (ex: mapa.html ou login-user.html)
+          window.location.href = "login-user.html"; 
+          return; // Para a execução do código imediatamente
+        }
+        // ==========================================================
+
         const displayName = profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
 
         document.getElementById('Username').innerText = displayName;
@@ -487,6 +499,7 @@
         };
         document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
 
+        // Se for admin, exibe o menu de gestão
         if (userRole === 'administrador') {
           const menuG = document.getElementById('menuGestao');
           if (menuG) menuG.style.setProperty('display', 'block', 'important');
