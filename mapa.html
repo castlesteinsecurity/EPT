@@ -263,6 +263,12 @@
         console.error("Erro na verificação da sessão:", err);
       }
 
+      const userRole = (profile?.role || 'aluno').toLowerCase();
+
+      if (userRole === 'aluno' || userRole === 'responsavel' || userRole === 'motorista')
+        window.location.href = "login-user.html"
+        return;
+
       initMap();
       renderTelemetryCards();         
       await fetchExistingPositions(); 
