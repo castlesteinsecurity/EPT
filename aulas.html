@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Gestão de Aulas e Turmas</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .grid-aulas {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-aulas { grid-template-columns: 1fr; }
+    }
+
+    .panel-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .panel-box h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-box h3 i { color: var(--primary); }
+
+    /* Inputs e Controles estilo Terminal */
+    .form-group {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      background: #11121d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+
+    .btn-cyber {
+      background: rgba(115, 255, 187, 0.08);
+      border: 1px solid rgba(115, 255, 187, 0.25);
+      color: #73ffbb;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-cyber:hover {
+      background: #73ffbb;
+      color: #11121d;
+    }
+
+    /* Listagens e Cards Internos */
+    .class-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .class-item-row span { font-weight: 600; color: #fff; }
+    .class-item-row small { font-family: var(--mono); color: var(--text2); }
+
+    .btn-icon-del {
+      background: none; border: none; color: #ff6b6b; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;
+    }
+    .btn-icon-del:hover { opacity: 1; }
+
+    /* Quadros de Horários */
+    .schedule-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .schedule-card {
+      background: #11121d;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .schedule-meta h4 { font-size: 0.9rem; color: #73ffbb; margin-bottom: 4px; }
+    .schedule-meta p { font-size: 0.8rem; color: #fff; }
+    .schedule-meta .obs-tag {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      background: rgba(255, 198, 115, 0.1);
+      color: #ffc673;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--mono);
+    }
+
+    .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
+    .topbar h1 { font-size: 1.7rem; }
+    .topbar p  { color: var(--text2); margin-top: 4px; font-size: 0.87rem; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo"><span>Rota Segura</span></div>
+    <nav class="menu">
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="aulas.html" class="active"><i class="fa-solid fa-book-open"></i><span>Gestão de Aulas</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+    </nav>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
+  </aside>
+
+  <main class="content">
+
+    <header class="topbar">
+      <div>
+        <div class="topbar-eyebrow">root@rota-segura:~/aulas_config$</div>
+        <h1>Controle de Turmas & Cronograma Escolar</h1>
+        <p>Atribuição de alunos a turmas e lançamento de agendas diárias e observações de aulas vagas</p>
+      </div>
+    </header>
+
+    <div class="grid-aulas">
+      
+      <div>
+        <div class="panel-box">
+          <h3><i class="fa-solid fa-folder-plus"></i> Criar Nova Turma</h3>
+          <form id="formTurma">
+            <div class="form-group">
+              <label for="nomeTurma">Nome da Turma</label>
+              <input type="text" id="nomeTurma" placeholder="Ex: 1º Ano A, 3º Técnico" required>
+            </div>
+            <button type="submit" class="btn-cyber">Inicializar Turma</button>
+          </form>
+
+          <div style="margin-top: 16px;" id="listaTurmasSimples">
+            </div>
+        </div>
+
+        <div class="panel-box">
+          <h3><i class="fa-solid fa-user-plus"></i> Alocar Aluno</h3>
+          <form id="formAlocacao">
+            <div class="form-group">
+              <label for="selectAluno">Selecionar Aluno</label>
+              <select id="selectAluno" required>
+                <option value="">Carregando alunos...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="selectTurmaAlocacao">Turma de Destino</label>
+              <select id="selectTurmaAlocacao" required>
+                <option value="">Selecione uma turma...</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-cyber">Vincular Estudante</button>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-box">
+          <h3><i class="fa-solid fa-calendar-day"></i> Diário de Aulas & Eventos</h3>
+          
+          <div class="form-group">
+            <label for="selectTurmaAgenda">Filtrar/Gerenciar Grade da Turma:</label>
+            <select id="selectTurmaAgenda">
+              <option value="">-- Escolha uma Turma para Ver/Lançar --</option>
+            </select>
+          </div>
+
+          <hr style="border: 0; border-top: 1px dashed var(--border); margin: 16px 0;">
+
+          <form id="formNovaAula" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+              <div class="form-group">
+                <label id="labelHorario">Horário / Ordem</label>
+                <input type="text" id="aulaHorario" placeholder="Ex: 07:30 ou 1ª Aula" required>
+              </div>
+              <div class="form-group">
+                <label id="labelMateria">Matéria / Atividade</label>
+                <input type="text" id="aulaMateria" placeholder="Ex: Matemática, Aula Vaga, Palestra" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="labelObs">Observações Críticas / Quadro Técnico</label>
+              <textarea id="aulaObs" placeholder="Ex: Trazer régua e compasso. OU: Professor atestado, alunos liberados no pátio."></textarea>
+            </div>
+            <button type="submit" class="btn-cyber" style="background: rgba(115,206,255,0.08); color: #73ceff; border-color: rgba(115,206,255,0.25);">Gravar Aula no Cronograma</button>
+          </form>
+
+          <div class="schedule-timeline" id="cronogramaTimeline">
+            <p style="color: var(--text2); font-size: 0.8rem; font-family: var(--mono); text-align: center; padding: 20px;">Selecione uma turma operacional acima para auditar os horários.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  (() => {
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Carregamento de dados locais seguros sincronizáveis
+    let turmas   = JSON.parse(localStorage.getItem('rs_turmas') || '[]');
+    let alunos   = JSON.parse(localStorage.getItem('rs_alocacoes') || '[]');
+    let agenda   = JSON.parse(localStorage.getItem('rs_agenda_aulas') || '[]');
+
+    async function checkSession() {
+      try {
+        // 1. Pega o usuário logado na sessão ativa
+        const { data: { user }, error: authError } = await db.auth.getUser();
+        if (authError || !user) { 
+          window.location.href = 'login.html'; 
+          return; 
+        }
+        
+        // 2. Busca o perfil e valida se o cargo dele é ADMINISTRADOR
+        const { data: profile, error: profError } = await db
+          .from('profiles')
+          .select('display_name, role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profError || !profile || profile.role?.toLowerCase() !== 'administrador') {
+          // Se não for admin, redireciona para o painel de aluno comum
+          window.location.href = 'login-user.html'; 
+          return; 
+        }
+
+        // 3. Se passou na validação com sucesso, alimenta a lista de alunos vinda do Banco de Perfis
+        const { data: profiles } = await db
+          .from('profiles')
+          .select('id, display_name')
+          .eq('role', 'aluno')
+          .order('display_name', { ascending: true });
+        
+        const selectAluno = document.getElementById('selectAluno');
+        if (selectAluno) {
+          selectAluno.innerHTML = '<option value="">-- Selecione o Aluno --</option>';
+          profiles?.forEach(p => {
+            selectAluno.innerHTML += `<option value="${p.id}">${p.display_name}</option>`;
+          });
+        }
+
+        // 4. Inicializa o layout das turmas na UI
+        renderTurmasUI();
+
+      } catch (err) {
+        console.error("Erro crítico na barreira de autenticação do Admin:", err);
+        window.location.href = 'login.html';
+      }
+    }
+
+    function renderTurmasUI() {
+      const listSimples   = document.getElementById('listaTurmasSimples');
+      const selectAloc    = document.getElementById('selectTurmaAlocacao');
+      const selectAgenda  = document.getElementById('selectTurmaAgenda');
+
+      if (listSimples) listSimples.innerHTML = '';
+      if (selectAloc) selectAloc.innerHTML = '<option value="">Selecione uma turma...</option>';
+      
+      const valorAgendaAtual = selectAgenda ? selectAgenda.value : '';
+      if (selectAgenda) selectAgenda.innerHTML = '<option value="">-- Escolha uma Turma para Ver/Lançar --</option>';
+
+      turmas.forEach((t, idx) => {
+        if (listSimples) {
+          listSimples.innerHTML += `
+            <div class="class-item-row">
+              <div><span>${t}</span></div>
+              <button class="btn-icon-del" onclick="window.deletarTurma(${idx})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          `;
+        }
+        if (selectAloc) selectAloc.innerHTML += `<option value="${t}">${t}</option>`;
+        if (selectAgenda) selectAgenda.innerHTML += `<option value="${t}">${t}</option>`;
+      });
+
+      if(selectAgenda && valorAgendaAtual) selectAgenda.value = valorAgendaAtual;
+    }
+
+    // Criar Turma
+    document.getElementById('formTurma').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeTurma').value.trim();
+      if(!turmas.includes(nome)) {
+        turmas.push(nome);
+        localStorage.setItem('rs_turmas', JSON.stringify(turmas));
+        document.getElementById('nomeTurma').value = '';
+        renderTurmasUI();
+      }
+    });
+
+    // Alocar Aluno
+    document.getElementById('formAlocacao').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const alunoId   = document.getElementById('selectAluno').value;
+      const alunoNome = document.getElementById('selectAluno').options[document.getElementById('selectAluno').selectedIndex].text;
+      const turmaNome = document.getElementById('selectTurmaAlocacao').value;
+
+      // Filtra para remover alocação antiga e insere na nova turma
+      alunos = alunos.filter(a => a.aluno_id !== alunoId);
+      alunos.push({ aluno_id: alunoId, aluno_nome: alunoNome, turma: turmaNome });
+      localStorage.setItem('rs_alocacoes', JSON.stringify(alunos));
+      
+      alert(`Estudante alocado com sucesso ao ${turmaNome}!`);
+    });
+
+    // Filtro de exibição de Agenda por Turma
+    const selectAgenda = document.getElementById('selectTurmaAgenda');
+    const formNovaAula = document.getElementById('formNovaAula');
+    
+    if (selectAgenda) {
+      selectAgenda.addEventListener('change', () => {
+        const turmaSelecionada = selectAgenda.value;
+        if(!turmaSelecionada) {
+          if (formNovaAula) formNovaAula.style.display = 'none';
+          document.getElementById('cronogramaTimeline').innerHTML = '<p style="color: var(--text2); font-size: 0.8rem; font-family: var(--mono); text-align: center; padding: 20px;">Selecione uma turma operacional acima para auditar os horários.</p>';
+          return;
+        }
+        if (formNovaAula) formNovaAula.style.display = 'block';
+        renderCronograma(turmaSelecionada);
+      });
+    }
+
+    function renderCronograma(turma) {
+      const timeline = document.getElementById('cronogramaTimeline');
+      const aulasFiltradas = agenda.filter(a => a.turma === turma);
+
+      if(aulasFiltradas.length === 0) {
+        timeline.innerHTML = `<p style="color: var(--text2); font-size: 0.8rem; font-family: var(--mono); text-align: center; padding: 20px;">Nenhuma aula lançada para o ${turma} hoje.</p>`;
+        return;
+      }
+
+      timeline.innerHTML = '';
+      aulasFiltradas.forEach((a, idx) => {
+        timeline.innerHTML += `
+          <div class="schedule-card">
+            <div class="schedule-meta">
+              <h4>${a.horario}</h4>
+              <p>${a.materia}</p>
+              ${a.obs ? `<span class="obs-tag"><i class="fa-solid fa-circle-info"></i> ${a.obs}</span>` : ''}
+            </div>
+            <button class="btn-icon-del" onclick="window.deletarAula(${idx}, '${turma}')"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+      });
+    }
+
+    // Gravar Nova Aula
+    document.getElementById('formNovaAula').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const turma   = selectAgenda.value;
+      const horario = document.getElementById('aulaHorario').value.trim();
+      const materia = document.getElementById('aulaMateria').value.trim();
+      const obs     = document.getElementById('aulaObs').value.trim();
+
+      agenda.push({ turma, horario, materia, obs });
+      localStorage.setItem('rs_agenda_aulas', JSON.stringify(agenda));
+
+      document.getElementById('aulaHorario').value = '';
+      document.getElementById('aulaMateria').value = '';
+      document.getElementById('aulaObs').value = '';
+
+      renderCronograma(turma);
+    });
+
+    // Funções expostas globalmente para exclusão fácil nas tabelas de visualização rápida
+    window.deletarTurma = (idx) => {
+      turmas.splice(idx, 1);
+      localStorage.setItem('rs_turmas', JSON.stringify(turmas));
+      renderTurmasUI();
+    };
+
+    window.deletarAula = (globalIdx, turma) => {
+      const filtradas = agenda.filter(a => a.turma === turma);
+      const alvo = filtradas[globalIdx];
+      agenda = agenda.filter(a => a !== alvo);
+      
+      localStorage.setItem('rs_agenda_aulas', JSON.stringify(agenda));
+      renderCronograma(turma);
+    };
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      await db.auth.signOut(); window.location.href = 'login.html';
+    });
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+</body>
+</html>

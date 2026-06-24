@@ -9,629 +9,203 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ==========================================================================
-       VARIÁVEIS DE SISTEMA E PALETA DE CORES (ORIGINAIS)
-    ========================================================================== */
-    :root {
-      --bg:        #1d2033;
-      --sidebar:   #191b2d;
-      --card:      #252841;
-      --card-hover:#2f3457;
-      --primary:   #abd2fa;
-      --text:      #ffffff;
-      --text2:     #9ea3c7;
-      --border:    rgba(255,255,255,0.05);
-      --mono:      'JetBrains Mono', monospace;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: var(--bg);
-      font-family: 'Segoe UI', sans-serif;
-      color: var(--text);
-      overflow: hidden;
-    }
-
-    .dashboard {
-      display: flex;
-      height: 100vh;
-    }
-
-    /* ==========================================================================
-       SIDEBAR — ORIGINAL INTACTA
-    ========================================================================== */
-    .sidebar {
-      width: 270px;
-      background: var(--sidebar);
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid var(--border);
-    }
-
-    .logo {
-      margin-bottom: 50px;
-    }
-
-    .logo span {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: white;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .menu a {
-      text-decoration: none;
-      color: var(--text2);
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 16px 18px;
-      border-radius: 14px;
-      transition: .25s;
-    }
-
-    .menu a i { width: 20px; }
-
-    .menu a:hover,
-    .menu a.active {
-      background: var(--card);
-      color: white;
-      transform: translateX(4px);
-    }
-
-    .menu a.active {
-      border-left: 3px solid var(--primary);
-    }
-
-    .btn-logout {
-      background: none;
-      border: none;
-      color: #ff6b6b;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 16px 18px;
-      font-size: 1rem;
-      width: 100%;
-      text-align: left;
-      border-radius: 14px;
-      transition: .25s;
-      font-family: inherit;
-      margin-top: 10px;
-    }
-
-    .btn-logout:hover {
-      background: rgba(255,107,107,0.08);
-      color: #ff8585;
-      transform: translateX(4px);
-    }
-
-    .sidebar-footer {
-      margin-top: auto;
-      font-size: 12px;
-      color: #6d739d;
-    }
-
-    #menuGestao { display: none !important; }
-
-    /* ==========================================================================
-       CONTEÚDO E TOPBAR
-    ========================================================================== */
-    .content {
-      flex: 1;
-      padding: 40px;
-      overflow-y: auto;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 40px;
-    }
-
-    .topbar h1 { font-size: 2rem; }
-
-    /* Subtítulo técnico sob o título */
+    /* Estilos locais complementares ao ecossistema */
+    .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
+    .topbar h1 { font-size: 1.7rem; }
+    
     .topbar-sub {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
-
     .topbar-sub p {
       font-family: var(--mono);
       font-size: 0.72rem;
       color: var(--text2);
-      letter-spacing: 0.04em;
     }
+    .topbar-sub .dot { color: var(--text2); opacity: 0.3; }
+    .topbar-clock { font-family: var(--mono); font-size: 0.72rem; color: var(--primary); font-weight: 500; }
 
-    .topbar-sub .dot {
-      color: var(--text2);
-      opacity: 0.4;
-    }
-
-    .topbar-clock {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--primary);
-      opacity: 0.8;
-    }
-
-    /* Badge de status online */
     .status-badge {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 5px 12px;
-      border-radius: 999px;
-      background: rgba(115,255,187,0.07);
-      border: 1px solid rgba(115,255,187,0.2);
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(115,255,187,0.05);
+      border: 1px solid rgba(115,255,187,0.15);
       font-family: var(--mono);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.1em;
       color: #73ffbb;
     }
-
     .status-badge i { animation: blink 1.6s infinite ease-in-out; }
 
-    @keyframes blink {
-      0%, 100% { opacity: 0.4; }
-      50%       { opacity: 1; }
-    }
+    @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
     .profile {
-      display: flex;
-      align-items: center;
-      gap: 15px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      flex-shrink: 0;
     }
-
-    .profile-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
-    }
-
-    .profile-text { text-align: right; }
-
-    .profile-text span {
-      display: block;
-      font-weight: 600;
-    }
-
-    .profile-text small {
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      color: var(--text2);
-    }
-
+    .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+    .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
+    .profile-text small { font-size: 0.7rem; color: #73ffbb; font-family: var(--mono); }
     .avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #d9fced, #abd2fa);
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(115,255,187,0.07);
+      border: 1px solid rgba(115,255,187,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #73ffbb;
     }
+    .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 
-    /* ==========================================================================
-       CARDS DE INDICADORES — ORIGINAL + TOQUE TÉCNICO
-    ========================================================================== */
+    /* Grid de Indicadores */
     .cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 22px;
-      margin-bottom: 35px;
+      gap: 16px;
+      margin-bottom: 20px;
     }
-
     .card {
       background: var(--card);
-      padding: 24px;
-      border-radius: 22px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      transition: .25s;
       border: 1px solid var(--border);
-    }
-
-    .card:hover {
-      background: var(--card-hover);
-      transform: translateY(-4px);
-    }
-
-    .card-icon {
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      background: rgba(171,210,250,0.08);
+      border-radius: 14px;
+      padding: 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--primary);
-      font-size: 1.2rem;
-      flex-shrink: 0;
+      gap: 14px;
+      transition: border-color 0.2s, background 0.2s;
     }
-
-    /* Label em mono, valor grande igual ao original */
-    .card span {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--text2);
-      letter-spacing: 0.06em;
-      text-transform: lowercase;
+    .card:hover { border-color: rgba(171, 210, 250, 0.2); background: var(--card-hover); }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 8px;
+      background: rgba(171,210,250,0.04);
+      border: 1px solid rgba(171,210,250,0.15);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary); font-size: 1rem; flex-shrink: 0;
     }
+    .card span { font-family: var(--mono); font-size: 0.68rem; color: var(--text2); letter-spacing: 0.5px; }
+    .card h2 { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: #fff; margin: 2px 0; }
+    .card p { font-family: var(--mono); font-size: 0.68rem; color: #73ffbb; }
+    .alert-card p { color: #ff6b6b; }
 
-    .card h2 {
-      margin: 6px 0;
-      font-size: 1.8rem;
-    }
-
-    .card p {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: #73ffbb;
-    }
-
-    .alert-card p { color: #ff7d7d; }
-
-    /* ==========================================================================
-       PAINEL LOBO FRONTAL — ORIGINAL + ELEMENTOS TÉCNICOS
-    ========================================================================== */
+    /* Painel Lobo Frontal - Estrutura de Fluxo */
     .lobe-container {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 35px;
-      min-height: 400px;
+      border-radius: 18px;
+      padding: 24px;
+      min-height: 380px;
       position: relative;
       overflow: hidden;
       display: flex;
       align-items: center;
     }
-
-    /* Badge "EXECUTANDO" — original */
     .lobe-status {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 14px;
-      border-radius: 999px;
-      background: rgba(115,255,187,0.08);
-      border: 1px solid rgba(115,255,187,0.3);
-      color: #73ffbb;
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      z-index: 3;
+      position: absolute; top: 16px; right: 16px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 4px;
+      background: rgba(115,255,187,0.05); border: 1px solid rgba(115,255,187,0.2);
+      color: #73ffbb; font-family: var(--mono); font-size: 0.65rem; font-weight: 700; z-index: 3;
     }
-
     .lobe-status i { animation: blink 1.6s infinite ease-in-out; }
-
-    /* Cabeçalho com linha técnica adicional */
-    .lobe-header {
-      position: absolute;
-      top: 35px;
-      left: 35px;
-      z-index: 3;
-      max-width: 320px;
-    }
-
-    .lobe-header h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-      color: #fff;
-    }
-
-    .lobe-header p {
-      color: var(--text2);
-      font-size: 0.85rem;
-      line-height: 1.55;
-      margin-bottom: 10px;
-    }
-
-    /* Linha técnica extra sob a descrição */
-    .lobe-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .lobe-meta-item {
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      color: var(--text2);
-      opacity: 0.6;
-      letter-spacing: 0.05em;
-    }
-
+    
+    .lobe-header { position: absolute; top: 24px; left: 24px; z-index: 3; max-width: 340px; }
+    .lobe-header h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .lobe-header p { color: var(--text2); font-size: 0.8rem; line-height: 1.5; margin-bottom: 12px; }
+    
+    .lobe-meta { display: flex; align-items: center; gap: 8px; }
+    .lobe-meta-item { font-family: var(--mono); font-size: 0.65rem; color: var(--text2); opacity: 0.6; }
     .lobe-meta-sep { color: var(--text2); opacity: 0.2; font-size: 0.7rem; }
 
-    /* SVG de sinais — original */
-    .signal-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .signal-line {
-      fill: none;
-      stroke: rgba(171,210,250,0.15);
-      stroke-width: 2;
-    }
-
+    .signal-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+    .signal-line { fill: none; stroke: rgba(171,210,250,0.06); stroke-width: 1.5; }
     .signal-pulse {
-      fill: none;
-      stroke: #73ffbb;
-      stroke-width: 2.5;
-      stroke-linecap: round;
-      stroke-dasharray: 20 600;
-      filter: drop-shadow(0 0 4px rgba(115,255,187,0.8));
+      fill: none; stroke: #73ffbb; stroke-width: 2; stroke-linecap: round;
+      stroke-dasharray: 20 600; filter: drop-shadow(0 0 3px rgba(115,255,187,0.6));
       animation: signalFlow 4s linear infinite;
     }
-
     @keyframes signalFlow { to { stroke-dashoffset: -620; } }
 
-    /* Núcleo — original */
-    .brain-core {
-      position: absolute;
-      top: 60%;
-      left: 20%;
-      transform: translate(-50%, -50%);
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
+    .brain-core { position: absolute; top: 58%; left: 22%; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center; }
     .lobe-core-wrap {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      background: rgba(171,210,250,0.05);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative; width: 90px; height: 90px;
+      background: rgba(171,210,250,0.02); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .lobe-core-wrap::before,
-    .lobe-core-wrap::after {
-      content: '';
-      position: absolute;
-      border: 2px solid rgba(171,210,250,0.3);
-      border-radius: 50%;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      animation: execPulse 2.4s infinite ease-out;
+    .lobe-core-wrap::before {
+      content: ''; position: absolute; border: 1.5px solid rgba(115,255,187,0.2); border-radius: 50%;
+      width: 100%; height: 100%; animation: execPulse 2s infinite ease-out;
     }
-
-    .lobe-core-wrap::after { animation-delay: 1.2s; }
-
-    @keyframes execPulse {
-      0%   { transform: scale(0.9); opacity: 0; }
-      15%  { opacity: 0.4; }
-      100% { transform: scale(1.5); opacity: 0; border-color: #73ffbb; }
-    }
-
+    @keyframes execPulse { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+    
     .lobe-core {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 72px;
-      height: 72px;
-      font-size: 2.6rem;
-      line-height: 1;
-      z-index: 2;
-      background: linear-gradient(135deg, #abd2fa, #73ffbb);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: coreGlow 3s infinite ease-in-out;
+      font-size: 1.8rem; background: linear-gradient(135deg, #abd2fa, #73ffbb);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
+    .brain-label { margin-top: 10px; font-family: var(--mono); font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; color: #73ffbb; }
 
-    .lobe-core::after {
-      content: '';
-      position: absolute;
-      inset: -14px;
-      border-radius: 50%;
-      border: 2px dashed rgba(115,255,187,0.4);
-      animation: spinExec 6s linear infinite;
-    }
-
-    @keyframes coreGlow {
-      0%, 100% { filter: drop-shadow(0 0 12px rgba(171,210,250,0.3)); }
-      50%       { filter: drop-shadow(0 0 20px rgba(115,255,187,0.5)); }
-    }
-
-    @keyframes spinExec {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
-    .brain-label {
-      margin-top: 14px;
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #73ffbb;
-    }
-
-    /* Nós da direita — original + badge técnico */
-    .nodes-container {
-      position: absolute;
-      right: 8%;
-      top: 55%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      z-index: 2;
-    }
-
+    .nodes-container { position: absolute; right: 24px; top: 55%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 2; }
     .signal-node {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 20px;
-      border-radius: 999px;
-      background: rgba(171,210,250,0.03);
-      border: 1px solid var(--border);
-      color: #fff;
-      font-size: 0.82rem;
-      font-weight: 600;
-      white-space: nowrap;
-      min-width: 160px;
-      transition: .3s;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px;
+      background: #11121d; border: 1px solid var(--border); color: #fff; font-size: 0.78rem;
+      font-weight: 600; min-width: 180px; transition: border-color 0.2s, transform 0.2s; text-decoration: none;
     }
-
-    .signal-node:hover {
-      border-color: rgba(115,255,187,0.4);
-      background: rgba(115,255,187,0.02);
-      transform: translateX(-4px);
-    }
-
-    .signal-node i {
-      color: #73ffbb;
-      font-size: 0.9rem;
-      width: 16px;
-      text-align: center;
-    }
-
-    /* Badge de status técnico dentro do nó */
+    .signal-node:hover { border-color: rgba(115,255,187,0.3); transform: translateX(-2px); }
+    .signal-node i { color: #73ffbb; font-size: 0.8rem; width: 14px; text-align: center; }
     .node-badge {
-      margin-left: auto;
-      font-family: var(--mono);
-      font-size: 0.58rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      padding: 2px 7px;
-      border-radius: 4px;
-      background: rgba(115,255,187,0.08);
-      color: #73ffbb;
-      border: 1px solid rgba(115,255,187,0.15);
+      margin-left: auto; font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 4px; background: rgba(115,255,187,0.08); color: #73ffbb; border: 1px solid rgba(115,255,187,0.15);
     }
+    .node-badge.warn { background: rgba(255,180,50,0.08); color: #f5be5e; border-color: rgba(255,180,50,0.2); }
+    .node-badge.danger { background: rgba(255,107,107,0.08); color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
 
-    .node-badge.warn {
-      background: rgba(255,180,50,0.08);
-      color: #f5be5e;
-      border-color: rgba(255,180,50,0.2);
-    }
-
-    /* ==========================================================================
-       RESPONSIVIDADE — ORIGINAL
-    ========================================================================== */
-    @media (max-width: 1200px) {
-      .cards { grid-template-columns: repeat(2,1fr); }
-    }
-
+    @media (max-width: 1200px) { .cards { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 900px) {
       .signal-svg, .nodes-container { display: none; }
-      .lobe-container {
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        min-height: auto;
-        padding: 40px 20px;
-      }
-      .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 30px; }
-      .brain-core  { position: relative; top: auto; left: auto; transform: none; }
+      .lobe-container { flex-direction: column; padding: 30px 16px; min-height: auto; justify-content: center; }
+      .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 24px; text-align: center; }
+      .lobe-meta { justify-content: center; }
+      .brain-core { position: relative; top: auto; left: auto; transform: none; }
     }
-
-    @media (max-width: 800px) {
-      .sidebar { display: none; }
-      .cards   { grid-template-columns: 1fr; }
-      .content { padding: 25px; }
-    }
+    @media (max-width: 800px) { .sidebar { display: none; } .cards { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
 <div class="dashboard">
 
-  <!-- ===================== SIDEBAR ORIGINAL ===================== -->
   <aside class="sidebar">
-    <div class="logo">
-      <span>Rota Segura</span>
-    </div>
-
+    <div class="logo"><span>Rota Segura</span></div>
     <nav class="menu">
-      <a href="dashboard.html" class="active">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Analytics</span>
-      </a>
-
-      <a href="usuarios.html" id="menuGestao">
-        <i class="fa-solid fa-user-graduate"></i>
-        <span>Gestão de Usuários</span>
-      </a>
-
-      <a href="onibus.html">
-        <i class="fa-solid fa-bus"></i>
-        <span>Ônibus</span>
-      </a>
-
-      <a href="rotas.html">
-        <i class="fa-solid fa-route"></i>
-        <span>Rotas</span>
-      </a>
-
-      <a href="alertas.html">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>Alertas</span>
-      </a>
-
-      <a href="mapa.html">
-        <i class="fa-solid fa-map-location-dot"></i>
-        <span>Mapa de Guaíra</span>
-      </a>
-
-      <button id="logoutBtn" class="btn-logout">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Sair do Sistema</span>
-      </button>
+      <a href="dashboard.html" class="active"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html" id="menuGestao" style="display: none;"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="aulas.html" id="menuAulas" style="display: none;"><i class="fa-solid fa-book-open"></i><span>Gestão de Aulas</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
     </nav>
-
-    <div class="sidebar-footer">
-      Desenvolvido por <b>CastlesteinSecurity</b>
-    </div>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
   </aside>
 
-  <!-- ===================== CONTEÚDO ===================== -->
   <main class="content">
-
     <header class="topbar">
       <div>
+        <div class="topbar-eyebrow">root@rota-segura:~/analytics$</div>
         <h1>Analytics</h1>
         <div class="topbar-sub">
-          <p>visão geral do sistema</p>
+          <p>visão_geral_do_sistema</p>
           <span class="dot">·</span>
           <span class="topbar-clock" id="clock">--:--:--</span>
           <span class="dot">·</span>
@@ -640,25 +214,17 @@
       </div>
 
       <div class="profile">
-        <div class="profile-right">
-          <div class="profile-text">
-            <span id="Username">Carregando...</span>
-            <small id="UserRole">Verificando...</small>
-          </div>
-          <div class="status-badge">
-            <i class="fa-solid fa-circle" style="font-size:0.45rem;"></i> ONLINE
-          </div>
+        <div class="profile-text">
+          <span id="Username">Carregando...</span>
+          <small id="UserRole">Verificando...</small>
         </div>
         <div class="avatar"></div>
       </div>
     </header>
 
-    <!-- Cards -->
     <section class="cards">
       <div class="card">
-        <div class="card-icon">
-          <i class="fa-solid fa-user-group"></i>
-        </div>
+        <div class="card-icon"><i class="fa-solid fa-user-group"></i></div>
         <div>
           <span>total_alunos</span>
           <h2 id="totalAlunosCard">...</h2>
@@ -667,9 +233,7 @@
       </div>
 
       <div class="card">
-        <div class="card-icon">
-          <i class="fa-solid fa-id-card"></i>
-        </div>
+        <div class="card-icon"><i class="fa-solid fa-id-card"></i></div>
         <div>
           <span>motoristas_ativos</span>
           <h2 id="totalMotoristasCard">...</h2>
@@ -677,38 +241,31 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-icon">
-          <i class="fa-solid fa-bus"></i>
-        </div>
+      <div class="card" style="cursor: pointer;" onclick="window.location.href='aulas.html'">
+        <div class="card-icon" style="color: #ffc673;"><i class="fa-solid fa-folder-tree"></i></div>
         <div>
-          <span>rotas_em_curso</span>
-          <h2>--</h2>
-          <p>sem dados ativos</p>
+          <span>turmas_ativas</span>
+          <h2 id="totalTurmasCard">0</h2>
+          <p style="color: #ffc673;">↑ gerenciável</p>
         </div>
       </div>
 
-      <div class="card alert-card">
-        <div class="card-icon">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
+      <div class="card alert-card" style="cursor: pointer;" onclick="window.location.href='alertas.html'">
+        <div class="card-icon" id="alertCardIcon" style="color: var(--primary);"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div>
           <span>sys.alertas</span>
-          <h2>--</h2>
-          <p>nenhuma ocorrência</p>
+          <h2 id="totalAlertasCard">0</h2>
+          <p id="alertCardStatusText" style="color: var(--text2);">nenhuma ocorrência</p>
         </div>
       </div>
     </section>
 
-    <!-- Lobo Frontal -->
     <section class="lobe-container">
-      <div class="lobe-status">
-        <i class="fa-solid fa-bolt"></i> EXECUTANDO
-      </div>
+      <div class="lobe-status"><i class="fa-solid fa-bolt"></i> EXECUTANDO</div>
 
       <div class="lobe-header">
         <h2>Lobo Frontal Operacional</h2>
-        <p>Núcleo de execução do sistema. Sinais de comando são despachados em tempo real para os módulos da frota.</p>
+        <p>Núcleo de execução assíncrono. Os sinais de telemetria e posicionamento global são processados em tempo real.</p>
         <div class="lobe-meta">
           <span class="lobe-meta-item">uptime <span id="uptime">--:--:--</span></span>
           <span class="lobe-meta-sep">|</span>
@@ -720,12 +277,10 @@
 
       <svg class="signal-svg" viewBox="0 0 1000 400" preserveAspectRatio="none">
         <defs>
-          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5"
-            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115,255,187,0.4)"/>
+          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115,255,187,0.3)"/>
           </marker>
         </defs>
-
         <path class="signal-line" d="M200,240 C400,160 600,140 800,145" marker-end="url(#signalArrow)"/>
         <path class="signal-line" d="M200,240 C400,210 600,195 800,195" marker-end="url(#signalArrow)"/>
         <path class="signal-line" d="M200,240 C400,260 600,250 800,245" marker-end="url(#signalArrow)"/>
@@ -738,49 +293,28 @@
       </svg>
 
       <div class="brain-core">
-        <div class="lobe-core-wrap">
-          <i class="fa-solid fa-brain lobe-core"></i>
-        </div>
+        <div class="lobe-core-wrap"><i class="fa-solid fa-brain lobe-core"></i></div>
         <span class="brain-label">Lobo Frontal</span>
       </div>
 
       <div class="nodes-container">
-        <a href="onibus.html" class="signal-node">
-          <i class="fa-solid fa-bus"></i>
-          <span>Ônibus</span>
-          <span class="node-badge">ONLINE</span>
-        </a>
-        <a href="rotas.html" class="signal-node">
-          <i class="fa-solid fa-route"></i>
-          <span>Rotas</span>
-          <span class="node-badge">ONLINE</span>
-        </a>
-        <a href="alertas.html" class="signal-node">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <span>Alertas</span>
-          <span class="node-badge warn">STANDBY</span>
-        </a>
-        <a href="usuarios.html" class="signal-node">
-          <i class="fa-solid fa-user-group"></i>
-          <span>Usuários</span>
-          <span class="node-badge">ONLINE</span>
-        </a>
+        <a href="onibus.html" class="signal-node"><i class="fa-solid fa-bus"></i><span>Ônibus</span><span class="node-badge">ONLINE</span></a>
+        <a href="rotas.html" class="signal-node"><i class="fa-solid fa-route"></i><span>Rotas</span><span class="node-badge">ONLINE</span></a>
+        <a href="alertas.html" class="signal-node"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span><span class="node-badge" id="lobeAlertsBadge">STANDBY</span></a>
+        <a href="usuarios.html" class="signal-node"><i class="fa-solid fa-user-group"></i><span>Usuários</span><span class="node-badge">ONLINE</span></a>
       </div>
     </section>
-
   </main>
 </div>
 
 <script>
   (() => {
-    /* ---- Relógio ---- */
     function tick() {
       const el = document.getElementById('clock');
       if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false });
     }
     tick(); setInterval(tick, 1000);
 
-    /* ---- Uptime ---- */
     const startTime = Date.now();
     setInterval(() => {
       const s   = Math.floor((Date.now() - startTime) / 1000);
@@ -791,7 +325,6 @@
       if (el) el.textContent = `${hh}:${mm}:${ss}`;
     }, 1000);
 
-    /* ---- Supabase ---- */
     const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -813,11 +346,7 @@
           window.location.href = "login-user.html"; return;
         }
 
-        const displayName = profile?.display_name
-          || user.user_metadata?.display_name
-          || user.email.split('@')[0];
-
-        document.getElementById('Username').innerText = displayName;
+        document.getElementById('Username').innerText = profile?.display_name || user.email.split('@')[0];
 
         const roleLabels = {
           administrador: 'Administrador',
@@ -829,42 +358,92 @@
 
         if (userRole === 'administrador') {
           const menuG = document.getElementById('menuGestao');
-          if (menuG) menuG.style.setProperty('display', 'flex', 'important');
+          if (menuG) menuG.style.display = 'flex';
+          
+          const menuA = document.getElementById('menuAulas');
+          if (menuA) menuA.style.display = 'flex';
         }
 
         fetchAnalytics();
       } catch (err) {
         console.error("Erro crítico na sessão:", err);
-        document.getElementById('Username').innerText = "Erro ao carregar";
+        document.getElementById('Username').innerText = "Erro local";
       }
     }
 
     async function fetchAnalytics() {
+      // 1. Contagens do Banco Relacional
       try {
         const { count: countAlunos, error: errAlunos } = await db
           .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'aluno');
-        document.getElementById('totalAlunosCard').innerText =
-          (!errAlunos && countAlunos !== null) ? countAlunos : '0';
+        document.getElementById('totalAlunosCard').innerText = (!errAlunos && countAlunos !== null) ? countAlunos : '0';
 
         const { count: countMotoristas, error: errMotoristas } = await db
           .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'motorista');
-        document.getElementById('totalMotoristasCard').innerText =
-          (!errMotoristas && countMotoristas !== null) ? countMotoristas : '0';
+        document.getElementById('totalMotoristasCard').innerText = (!errMotoristas && countMotoristas !== null) ? countMotoristas : '0';
       } catch (err) {
         document.getElementById('totalAlunosCard').innerText = '0';
         document.getElementById('totalMotoristasCard').innerText = '0';
       }
+
+      // 2. Mapeamento Cache de Turmas Criadas
+      try {
+        const localTurmas = JSON.parse(localStorage.getItem('rs_turmas') || '[]');
+        const totalTurmasCard = document.getElementById('totalTurmasCard');
+        if (totalTurmasCard) totalTurmasCard.innerText = localTurmas.length;
+      } catch (e) {
+        console.error("Falha ao computar turmas ativas localmente:", e);
+      }
+
+      // 3. Sincronização Dinâmica do Mapeamento de Alertas
+      try {
+        const saved = localStorage.getItem('rota_segura_incidentes');
+        let totalAlertas = 0;
+        let possuiCritico = false;
+
+        if (saved) {
+          const incidentes = JSON.parse(saved);
+          totalAlertas = incidentes.length;
+          possuiCritico = incidentes.some(i => i.type === 'critico');
+        }
+
+        const totalAlertasCard = document.getElementById('totalAlertasCard');
+        const alertCardStatusText = document.getElementById('alertCardStatusText');
+        const alertCardIcon = document.getElementById('alertCardIcon');
+        const lobeAlertsBadge = document.getElementById('lobeAlertsBadge');
+
+        if (totalAlertasCard) totalAlertasCard.innerText = totalAlertas;
+
+        if (totalAlertas > 0) {
+          if (alertCardStatusText) alertCardStatusText.innerText = `↑ ${totalAlertas} ativos`;
+          if (alertCardStatusText) alertCardStatusText.style.color = '#ff6b6b';
+          if (alertCardIcon) alertCardIcon.style.color = '#ff6b6b';
+          
+          if (lobeAlertsBadge) {
+            lobeAlertsBadge.innerText = possuiCritico ? 'CRÍTICO' : 'AVISO';
+            lobeAlertsBadge.className = possuiCritico ? 'node-badge danger' : 'node-badge warn';
+          }
+        } else {
+          if (alertCardStatusText) alertCardStatusText.innerText = 'nenhuma ocorrência';
+          if (alertCardStatusText) alertCardStatusText.style.color = 'var(--text2)';
+          if (alertCardIcon) alertCardIcon.style.color = 'var(--primary)';
+          
+          if (lobeAlertsBadge) {
+            lobeAlertsBadge.innerText = 'STANDBY';
+            lobeAlertsBadge.className = 'node-badge warn';
+          }
+        }
+      } catch (e) {
+        console.error("Falha ao mapear contagem local de alertas:", e);
+      }
     }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-      const { error } = await db.auth.signOut();
-      if (!error) window.location.href = "login.html";
-      else alert("Erro ao tentar sair: " + error.message);
+      await db.auth.signOut(); window.location.href = "login.html";
     });
 
     document.addEventListener('DOMContentLoaded', checkSession);
   })();
 </script>
-
 </body>
 </html>

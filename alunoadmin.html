@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura | Portal do Aluno</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .admin-filter-box {
+      background: rgba(115, 255, 187, 0.03);
+      border: 1px dashed var(--primary);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: none; /* Ativado dinamicamente via JS para administradores */
+    }
+
+    .admin-filter-box h3 {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-filter-box select {
+      background: #11121d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      color: #fff;
+      font-size: 0.85rem;
+      width: 100%;
+      outline: none;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .info-card h2 {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-card h2 i { color: var(--primary); }
+
+    /* Estilização da Timeline de Aulas */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      background: #11121d;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .timeline-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .timeline-time {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--primary);
+      background: rgba(115, 255, 187, 0.05);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(115, 255, 187, 0.15);
+    }
+
+    .timeline-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .timeline-obs {
+      font-size: 0.8rem;
+      color: #ffc673;
+      background: rgba(255, 198, 115, 0.05);
+      border: 1px solid rgba(255, 198, 115, 0.15);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .timeline-obs i { margin-top: 2px; flex-shrink: 0; }
+
+    .status-empty {
+      text-align: center;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      padding: 30px 10px;
+    }
+
+    .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
+    .topbar h1 { font-size: 1.7rem; }
+    .topbar p  { color: var(--text2); margin-top: 4px; font-size: 0.87rem; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="logo"><span>Rota Segura</span></div>
+    <nav class="menu">
+      <a href="dashboard.html" id="linkAnalytics" style="display: none;"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="aluno.html" class="active"><i class="fa-solid fa-book-open"></i><span>Meu Cronograma</span></a>
+      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
+      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
+      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+    </nav>
+    <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
+  </aside>
+
+  <main class="content">
+
+    <header class="topbar">
+      <div>
+        <div class="topbar-eyebrow" id="shellPath">student@rota-segura:~$</div>
+        <h1 id="pageTitle">Portal do Estudante</h1>
+        <p id="pageDesc">Quadro operacional de horários, monitoramento de aulas vagas e avisos institucionais da sua turma.</p>
+      </div>
+
+      <div class="profile">
+        <div class="profile-text">
+          <span id="Username">Carregando...</span>
+          <small id="UserRole">Verificando...</small>
+        </div>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <div class="admin-filter-box" id="adminFilterBox">
+      <h3><i class="fa-solid fa-user-shield"></i> Modo Auditoria Administrativa</h3>
+      <select id="selectAlunoFiltro">
+        <option value="">-- Selecione um Estudante para Auditar o Cronograma --</option>
+      </select>
+    </div>
+
+    <div class="main-grid">
+      <div class="info-card">
+        <h2 id="cronogramaHeader"><i class="fa-solid fa-calendar-lines-pen"></i> Diário de Bordo & Grade Escolar</h2>
+        <div class="timeline" id="cronogramaTimeline">
+          <div class="status-empty">Carregando dados da grade horária...</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  (() => {
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Estruturas Locais Sincronizáveis
+    let alocacoes = JSON.parse(localStorage.getItem('rs_alocacoes') || '[]');
+    let agenda    = JSON.parse(localStorage.getItem('rs_agenda_aulas') || '[]');
+
+    async function checkSession() {
+      try {
+        const { data: { user }, error: authError } = await db.auth.getUser();
+        if (authError || !user) { window.location.href = "login.html"; return; }
+
+        const { data: profile } = await db
+          .from('profiles')
+          .select('display_name, role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const userRole = (profile?.role || 'aluno').toLowerCase();
+        
+        document.getElementById('Username').innerText = profile?.display_name || user.email.split('@')[0];
+
+        const roleLabels = {
+          administrador: 'Administrador',
+          aluno:         'Estudante',
+          responsavel:   'Responsável'
+        };
+        document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
+
+        // Customização de Ambiente para o Administrador
+        if (userRole === 'administrador') {
+          document.getElementById('shellPath').innerText = "root@rota-segura:~/view_student$";
+          document.getElementById('pageTitle').innerText = "Painel Supervisor de Alunos";
+          document.getElementById('pageDesc').innerText = "Auditoria e monitoramento de agendas operacionais por discente.";
+          
+          const linkAnalytics = document.getElementById('linkAnalytics');
+          if (linkAnalytics) linkAnalytics.style.display = 'flex';
+          
+          setupAdminView();
+        } else {
+          // Processamento para Aluno ou Responsável Normal
+          carregarCronogramaAluno(user.id);
+        }
+
+      } catch (err) {
+        console.error("Falha ao inicializar o Portal do Aluno:", err);
+      }
+    }
+
+    // Configura e popula o seletor para Administradores
+    async function setupAdminView() {
+      document.getElementById('adminFilterBox').style.display = 'block';
+      
+      // Busca todos os usuários cadastrados como aluno
+      const { data: profiles } = await db
+        .from('profiles')
+        .select('id, display_name')
+        .eq('role', 'aluno')
+        .order('display_name', { ascending: true });
+
+      const select = document.getElementById('selectAlunoFiltro');
+      profiles?.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.display_name}</option>`;
+      });
+
+      select.addEventListener('change', () => {
+        const alunoId = select.value;
+        if (!alunoId) {
+          document.getElementById('cronogramaTimeline').innerHTML = '<div class="status-empty">Selecione um estudante no menu superior para puxar os registros de aulas.</div>';
+          document.getElementById('cronogramaHeader').innerHTML = '<i class="fa-solid fa-calendar-lines-pen"></i> Diário de Bordo & Grade Escolar';
+          return;
+        }
+        carregarCronogramaAluno(alunoId);
+      });
+
+      document.getElementById('cronogramaTimeline').innerHTML = '<div class="status-empty">Aguardando seleção de estudante para auditoria de dados.</div>';
+    }
+
+    function carregarCronogramaAluno(alunoId) {
+      const timeline = document.getElementById('cronogramaTimeline');
+      const headerTitle = document.getElementById('cronogramaHeader');
+
+      // 1. Encontra a qual turma o aluno pertence baseado no banco de alocações local
+      const alocacao = alocacoes.find(a => a.aluno_id === alunoId);
+
+      if (!alocacao) {
+        if (headerTitle) headerTitle.innerHTML = `<i class="fa-solid fa-calendar-lines-pen"></i> Sem Vínculo Operacional`;
+        timeline.innerHTML = '<div class="status-empty"><i class="fa-solid fa-triangle-exclamation" style="color: #ffc673; font-size: 1.2rem; margin-bottom: 8px;"></i><br>Este aluno ainda não foi vinculado a nenhuma turma pelo administrador do sistema.</div>';
+        return;
+      }
+
+      const nomeTurma = alocacao.turma;
+      if (headerTitle) headerTitle.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> Cronograma Escolar — ${nomeTurma}`;
+
+      // 2. Filtra as aulas lançadas para aquela turma específica
+      const aulasDaTurma = agenda.filter(a => a.turma === nomeTurma);
+
+      if (aulasDaTurma.length === 0) {
+        timeline.innerHTML = `<div class="status-empty">Nenhum evento letivo ou alteração de aula registrada para o ${nomeTurma} no dia de hoje.</div>`;
+        return;
+      }
+
+      // 3. Renderiza a grade horária estruturada
+      timeline.innerHTML = '';
+      aulasDaTurma.forEach(a => {
+        timeline.innerHTML += `
+          <div class="timeline-item">
+            <div class="timeline-item-header">
+              <span class="timeline-title">${a.materia}</span>
+              <span class="timeline-time">${a.horario}</span>
+            </div>
+            ${a.obs ? `
+              <div class="timeline-obs">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>${a.obs}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+    }
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      await db.auth.signOut(); window.location.href = "login.html";
+    });
+
+    document.addEventListener('DOMContentLoaded', checkSession);
+  })();
+</script>
+</body>
+</html>

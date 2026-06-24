@@ -11,81 +11,125 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    .section-block { margin-bottom: 30px; }
-    .section-label { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .section-label h2 { font-size: 1.1rem; font-weight: 700; }
-    
-    .driver-card {
+    .section-block {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 16px;
+      border-radius: 18px;
+      padding: 18px;
+      height: calc(100vh - 150px);
+      display: flex;
+      flex-direction: column;
+      margin-top: 18px;
+    }
+
+    .panel-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .driver-card {
+      background: #1d2033;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 20px;
-      transition: transform 0.2s, border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .driver-card:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
+      border-color: rgba(171, 210, 250, 0.25);
     }
-    .driver-info h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 4px; }
-    .driver-info p { font-size: 0.88rem; color: var(--text2); }
+    
+    .driver-info h3 { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .driver-info p { font-size: 0.8rem; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+    .driver-info p i { color: var(--primary); font-size: 0.75rem; }
     
     .bus-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       margin-top: 8px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
       font-weight: 600;
     }
-    .bus-badge.none { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
-    .bus-badge.assigned { background: rgba(115, 255, 187, 0.1); color: #73ffbb; }
+    .bus-badge.none { background: rgba(255, 107, 107, 0.04); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.15); }
+    .bus-badge.assigned { background: rgba(115, 255, 187, 0.1); color: #73ffbb; border: 1px solid rgba(115, 255, 187, 0.2); }
 
-    /* ESTILO DO BOTÃO DE EDIÇÃO AMPLIAÇÃO DO PADDING */
     .btn-edit-bus {
-      background: #d9fced;
-      color: #1a1f3a;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 22px; /* Padding maior e mais confortável */
-      font-size: 0.9rem;
-      font-weight: 700;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       white-space: nowrap;
-      transition: background 0.2s, transform 0.2s;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
     .btn-edit-bus:hover {
-      background: #abd2fa;
-      transform: translateY(-1px);
-    }
-    .btn-edit-bus:active {
-      transform: translateY(0);
+      background: rgba(249, 177, 122, 0.05);
+      color: #fff;
+      border-color: rgba(249, 177, 122, 0.35);
     }
 
     /* Estilos do Modal de Edição */
-    .modal-driver-header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    .modal-driver-header h4 { font-size: 1.1rem; color: var(--text); }
-    .modal-driver-header p { font-size: 0.85rem; color: var(--text2); }
+    .modal-driver-header { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .modal-driver-header h3 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .modal-driver-header h4 { font-size: 0.9rem; color: var(--primary); margin: 6px 0 2px 0; }
+    .modal-driver-header p { font-size: 0.78rem; color: var(--text2); }
+
+    .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
+    .topbar h1 { font-size: 1.7rem; }
+    .topbar p  { color: var(--text2); margin-top: 4px; font-size: 0.87rem; }
+
+    .profile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      flex-shrink: 0;
+    }
+    .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+    .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
+    .profile-text small { font-size: 0.7rem; color: #73ffbb; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(115,255,187,0.07);
+      border: 1px solid rgba(115,255,187,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #73ffbb;
+    }
+    .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 
     #toast {
-      position: fixed; bottom: 24px; right: 24px; background: var(--card);
-      border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px;
-      font-size: 0.85rem; display: flex; align-items: center; gap: 10px;
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--card);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 13px 18px; font-size: 0.83rem;
+      display: flex; align-items: center; gap: 10px;
       box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 99999;
-      transform: translateY(20px); opacity: 0; transition: transform .25s, opacity .25s; pointer-events: none;
+      transform: translateY(20px); opacity: 0;
+      transition: transform .25s, opacity .25s; pointer-events: none;
     }
-    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.show    { transform: translateY(0); opacity: 1; }
     #toast.success { border-color: #73ffbb; }
     #toast.success i { color: #73ffbb; }
-    #toast.error { border-color: #ff7d7d; }
-    #toast.error i { color: #ff7d7d; }
+    #toast.error   { border-color: #ff6b6b; }
+    #toast.error i { color: #ff6b6b; }
   </style>
 </head>
 <body>
@@ -109,8 +153,9 @@
   <main class="content">
     <header class="topbar">
       <div>
+        <div class="topbar-eyebrow">root@rota-segura:~/onibus$</div>
         <h1>Gestão de Frota</h1>
-        <p>Vincule e edite os ônibus de cada motorista</p>
+        <p>Vincule e edite as especificações técnicas de ônibus por motorista operacional</p>
       </div>
       <div class="profile">
         <div class="profile-text"><span id="Username">Buscando...</span><small>Administrador</small></div>
@@ -119,22 +164,21 @@
     </header>
 
     <div class="section-block">
-      <div class="section-label">
-        <i class="fa-solid fa-id-card" style="color: var(--primary);"></i>
-        <h2>Lista de Motoristas Ativos</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div class="panel-section-title" style="margin: 0;"><i class="fa-solid fa-id-card" style="margin-right: 6px;"></i>Lista de Motoristas Ativos</div>
       </div>
 
-      <div id="driversContainer">
-        <p style="color: var(--text2);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando motoristas...</p>
+      <div id="driversContainer" style="flex: 1; overflow-y: auto; padding-right: 2px;">
+        <p style="color: var(--text2); font-size:0.8rem;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando motoristas...</p>
       </div>
     </div>
   </main>
 </div>
 
 <div id="busModal" class="modal" role="dialog" aria-modal="true">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 440px;">
     <div class="modal-driver-header">
-      <h3 style="margin-bottom: 4px;">Configurar Ônibus</h3>
+      <h3>Configurar Ônibus</h3>
       <h4 id="modalDriverName">—</h4>
       <p id="modalDriverEmail">—</p>
     </div>
@@ -142,29 +186,29 @@
     <input type="hidden" id="modalDriverId">
 
     <form id="busForm">
-      <div class="input-box" style="margin-bottom: 14px;">
+      <div class="input-box" style="margin-bottom: 12px;">
         <label>Placa do Veículo</label>
-        <input type="text" id="busPlate" placeholder="ABC-1234" required>
+        <input type="text" id="busPlate" placeholder="Ex: ABC-1234" required>
       </div>
 
-      <div class="input-box" style="margin-bottom: 14px;">
+      <div class="input-box" style="margin-bottom: 12px;">
         <label>Modelo do Ônibus (E Capacidade em Litros)</label>
-        <input type="text" id="busModel" placeholder="Mercedes-Benz OF-1721 (300L)" required>
+        <input type="text" id="busModel" placeholder="Ex: Mercedes-Benz OF-1721 (300L)" required>
       </div>
 
-      <div class="input-box" style="margin-bottom: 14px;">
+      <div class="input-box" style="margin-bottom: 12px;">
         <label>Numeração / Prefixo do Ônibus</label>
         <input type="text" id="busEnumeration" placeholder="Ex: Carro 402" required>
       </div>
 
-      <div class="input-box" style="margin-bottom: 20px;">
+      <div class="input-box" style="margin-bottom: 16px;">
         <label>Apólice de Seguro <small style="color: var(--text2); font-weight: normal;">(Opcional)</small></label>
         <input type="text" id="busPolicy" placeholder="Nº da Apólice ou Seguradora">
       </div>
 
       <div class="modal-actions">
         <button type="button" class="btn-cancel" id="btnCancelModal">Cancelar</button>
-        <button type="submit" class="btn-save" id="btnSaveModal">Salvar Ônibus</button>
+        <button type="submit" class="btn-save" id="btnSaveModal" style="padding:8px 16px; font-size:0.8rem;">Salvar Ônibus</button>
       </div>
     </form>
   </div>
@@ -179,14 +223,12 @@
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* ── VERIFICAÇÃO DE SESSÃO ── */
     async function checkSession() {
       const { data: { user }, error: authError } = await db.auth.getUser();
       if (authError || !user) { window.location.href = 'login.html'; return; }
 
       const { data: profile } = await db.from('profiles').select('display_name, role').eq('id', user.id).maybeSingle();
       if (!profile || profile.role?.toLowerCase() !== 'administrador') {
-        alert('Acesso restrito a administradores.');
         window.location.href = 'dashboard.html';
         return;
       }
@@ -194,7 +236,6 @@
       fetchDriversAndBuses();
     }
 
-    /* ── BUSCAR MOTORISTAS E ÔNIBUS ── */
     async function fetchDriversAndBuses() {
       const container = document.getElementById('driversContainer');
 
@@ -205,12 +246,12 @@
         .order('display_name');
 
       if (errDrivers) {
-        container.innerHTML = `<p style="color: #ff7d7d;">Erro ao carregar motoristas.</p>`;
+        container.innerHTML = `<p style="color: #ff6b6b; font-size:0.8rem; text-align:center; padding-top:20px;">Erro de conexão ao carregar motoristas.</p>`;
         return;
       }
 
       if (!drivers.length) {
-        container.innerHTML = `<p style="color: var(--text2);">Nenhum motorista cadastrado no sistema.</p>`;
+        container.innerHTML = `<p style="color: var(--text2); font-size:0.8rem; text-align:center; padding-top:20px;">Nenhum motorista homologado no perímetro.</p>`;
         return;
       }
 
@@ -226,11 +267,11 @@
         return `
           <div class="driver-card">
             <div class="driver-info">
-              <h3>${escHtml(d.display_name || 'Sem nome')}</h3>
+              <h3>${escHtml(d.display_name || 'Usuário Sem Nome')}</h3>
               <p><i class="fa-solid fa-envelope"></i> ${escHtml(d.email)}</p>
               ${hasBus 
-                ? `<span class="bus-badge assigned"><i class="fa-solid fa-bus"></i> ${escHtml(bus.model)} | Placa: ${escHtml(bus.plate)} | N° ${escHtml(bus.enumeration)}</span>`
-                : `<span class="bus-badge none"><i class="fa-solid fa-triangle-exclamation"></i> Sem ônibus vinculado</span>`
+                ? `<span class="bus-badge assigned"><i class="fa-solid fa-bus"></i> ${escHtml(bus.model)} • Prefixo: ${escHtml(bus.enumeration)} • Placa: ${escHtml(bus.plate)}</span>`
+                : `<span class="bus-badge none"><i class="fa-solid fa-triangle-exclamation"></i> Sem frota vinculada</span>`
               }
             </div>
             <button class="btn-edit-bus" 
@@ -241,7 +282,7 @@
               data-model="${hasBus ? escHtml(bus.model) : ''}"
               data-enum="${hasBus ? escHtml(bus.enumeration) : ''}"
               data-policy="${hasBus ? escHtml(bus.policy) : ''}">
-              <i class="fa-solid fa-bus-simple"></i> Editar Ônibus
+              <i class="fa-solid fa-bus-simple"></i> Vincular Frota
             </button>
           </div>
         `;
@@ -252,12 +293,11 @@
       });
     }
 
-    /* ── GERENCIAMENTO DO MODAL ── */
     const modal = document.getElementById('busModal');
     
     function openModal(data) {
       document.getElementById('modalDriverId').value = data.id;
-      document.getElementById('modalDriverName').textContent = data.name;
+      document.getElementById('modalDriverName').textContent = data.name || "Usuário Sem Nome";
       document.getElementById('modalDriverEmail').textContent = data.email;
       
       document.getElementById('busPlate').value = data.plate;
@@ -270,8 +310,8 @@
 
     function closeModal() { modal.style.display = 'none'; }
     document.getElementById('btnCancelModal').addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
-    /* ── SALVAR OU ATUALIZAR ÔNIBUS ── */
     document.getElementById('busForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -300,15 +340,14 @@
       btnSave.textContent = "Salvar Ônibus";
 
       if (error) {
-        showToast("Erro ao salvar: " + error.message, "error");
+        showToast("Falha operacional: " + error.message, "error");
       } else {
         closeModal();
-        showToast("Ônibus vinculado com sucesso!", "success");
+        showToast("Unidade veicular vinculada!", "success");
         fetchDriversAndBuses();
       }
     });
 
-    /* ── AUXILIARES (TOAST, LOGOUT, SANITIZAÇÃO) ── */
     let toastTimer;
     function showToast(msg, type = 'success') {
       const toast = document.getElementById('toast');
@@ -316,7 +355,7 @@
       document.getElementById('toastMsg').textContent = msg;
       toast.className = `show ${type}`;
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+      toastTimer = setTimeout(() => { toast.className = ''; }, 3000);
     }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
