@@ -134,6 +134,27 @@
     .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
     .topbar h1 { font-size: 1.7rem; }
     .topbar p  { color: var(--text2); margin-top: 4px; font-size: 0.87rem; }
+
+    /* Componente de Perfil Sincronizado */
+    .profile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      flex-shrink: 0;
+    }
+    .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+    .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
+    .profile-text small { font-size: 0.7rem; color: #73ffbb; font-family: var(--mono); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(115,255,187,0.07);
+      border: 1px solid rgba(115,255,187,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #73ffbb;
+    }
+    .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
   </style>
 </head>
 <body>
@@ -143,11 +164,14 @@
   <aside class="sidebar">
     <div class="logo"><span>Rota Segura</span></div>
     <nav class="menu">
-      <a href="dashboard.html" id="linkAnalytics" style="display: none;"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
-      <a href="aluno.html" class="active"><i class="fa-solid fa-book-open"></i><span>Meu Cronograma</span></a>
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+      <a href="usuarios.html" id="menuGestao" style="display: none;"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="aulas.html" id="menuAulas" style="display: none;"><i class="fa-solid fa-book-open"></i><span>Gestão de Aulas</span></a>
       <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
       <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
       <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <a href="alunoadmin.html" class="active"><i class="fa-solid fa-chalkboard-user"></i><span>Aulas Aluno</span></a>
       <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
     </nav>
     <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
@@ -196,7 +220,6 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Estruturas Locais Sincronizáveis
     let alocacoes = JSON.parse(localStorage.getItem('rs_alocacoes') || '[]');
     let agenda    = JSON.parse(localStorage.getItem('rs_agenda_aulas') || '[]');
 
@@ -222,18 +245,19 @@
         };
         document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
 
-        // Customização de Ambiente para o Administrador
         if (userRole === 'administrador') {
           document.getElementById('shellPath').innerText = "root@rota-segura:~/view_student$";
           document.getElementById('pageTitle').innerText = "Painel Supervisor de Alunos";
           document.getElementById('pageDesc').innerText = "Auditoria e monitoramento de agendas operacionais por discente.";
           
-          const linkAnalytics = document.getElementById('linkAnalytics');
-          if (linkAnalytics) linkAnalytics.style.display = 'flex';
+          const menuG = document.getElementById('menuGestao');
+          if (menuG) menuG.style.display = 'flex';
+          
+          const menuA = document.getElementById('menuAulas');
+          if (menuA) menuA.style.display = 'flex';
           
           setupAdminView();
         } else {
-          // Processamento para Aluno ou Responsável Normal
           carregarCronogramaAluno(user.id);
         }
 
@@ -242,11 +266,9 @@
       }
     }
 
-    // Configura e popula o seletor para Administradores
     async function setupAdminView() {
       document.getElementById('adminFilterBox').style.display = 'block';
       
-      // Busca todos os usuários cadastrados como aluno
       const { data: profiles } = await db
         .from('profiles')
         .select('id, display_name')
@@ -275,7 +297,6 @@
       const timeline = document.getElementById('cronogramaTimeline');
       const headerTitle = document.getElementById('cronogramaHeader');
 
-      // 1. Encontra a qual turma o aluno pertence baseado no banco de alocações local
       const alocacao = alocacoes.find(a => a.aluno_id === alunoId);
 
       if (!alocacao) {
@@ -287,7 +308,6 @@
       const nomeTurma = alocacao.turma;
       if (headerTitle) headerTitle.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> Cronograma Escolar — ${nomeTurma}`;
 
-      // 2. Filtra as aulas lançadas para aquela turma específica
       const aulasDaTurma = agenda.filter(a => a.turma === nomeTurma);
 
       if (aulasDaTurma.length === 0) {
@@ -295,7 +315,6 @@
         return;
       }
 
-      // 3. Renderiza a grade horária estruturada
       timeline.innerHTML = '';
       aulasDaTurma.forEach(a => {
         timeline.innerHTML += `

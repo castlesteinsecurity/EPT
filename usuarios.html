@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rota Segura | Gestão de Usuários</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -23,6 +25,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 12px;
     }
 
     .section-label h2 {
@@ -41,7 +44,6 @@
       font-weight: 700;
     }
 
-    /* Badges de Roles */
     .badge {
       font-size: 0.65rem;
       padding: 2px 6px;
@@ -51,7 +53,7 @@
     }
     .badge.admin {
       background: rgba(249, 177, 122, 0.1);
-      color: var(--primary);
+      color: #f9b17a;
       border: 1px solid rgba(249, 177, 122, 0.2);
     }
     .badge.aluno {
@@ -70,9 +72,8 @@
       border: 1px solid rgba(115, 206, 255, 0.2);
     }
 
-    /* Tabelas customizadas estilo Terminal */
     .user-table-wrapper {
-      max-height: 200px;
+      max-height: 240px;
       overflow-y: auto;
       margin-top: 10px;
       padding-right: 2px;
@@ -102,7 +103,6 @@
       background: rgba(255, 255, 255, 0.01);
     }
 
-    /* Botão de engrenagem de ação rápida */
     .btn-action {
       background: transparent;
       border: none;
@@ -112,10 +112,9 @@
       transition: color 0.2s;
     }
     .btn-action:hover {
-      color: var(--primary);
+      color: #73ffbb;
     }
 
-    /* Info do usuário no modal */
     .modal-user-info {
       background: #11121d;
       border: 1px solid var(--border);
@@ -184,7 +183,6 @@
 
     .btn-save:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* Estilos dinâmicos do campo de vínculo familiar */
     .relation-field-box {
       border-top: 1px dashed var(--border);
       margin-top: 14px;
@@ -213,10 +211,12 @@
     <nav class="menu">
       <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
       <a href="usuarios.html" class="active"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
+      <a href="aulas.html"><i class="fa-solid fa-book-open"></i><span>Gestão de Aulas</span></a>
       <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
       <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
       <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
       <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <a href="alunoadmin.html"><i class="fa-solid fa-chalkboard-user"></i><span>Aulas Aluno</span></a>
       <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
     </nav>
     <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
@@ -238,7 +238,7 @@
 
     <div class="section-block">
       <div class="section-label">
-        <i class="fa-solid fa-user-shield" style="color: var(--primary);"></i>
+        <i class="fa-solid fa-user-shield" style="color: #f9b17a;"></i>
         <h2>Administradores</h2>
         <span class="count-badge" id="countAdmin">0</span>
       </div>
@@ -375,7 +375,7 @@
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let cacheUsersRaw = []; // Armazena cópia local para mapeamentos relacionais rápidos
+    let cacheUsersRaw = []; 
 
     const ROLES = {
       administrador: { label: 'ADMINISTRADOR', cssClass: 'admin',      tbody: 'tbodyAdmin',     count: 'countAdmin' },
@@ -485,7 +485,6 @@
     const relationLabel = document.getElementById('relationLabel');
     const selectTarget  = document.getElementById('selectRelationTarget');
 
-    // Monitora a troca do cargo no próprio modal para renderizar a UI relacional na hora
     inputRole.addEventListener('change', () => {
       updateModalRelationUI(inputRole.value, inputId.value);
     });
@@ -502,7 +501,6 @@
         } else {
           selectTarget.innerHTML = '<option value="">-- Deixar sem responsável --</option>';
           
-          // Busca vínculo existente no localStorage para pré-seleção
           const vinculos = JSON.parse(localStorage.getItem('rota_segura_vinculos') || '[]');
           const vinculoAtual = vinculos.find(v => v.aluno_id === userId);
 
@@ -563,7 +561,6 @@
       btnSave.disabled = true;
       btnSave.textContent = 'Salvando Diretrizes...';
 
-      // 1. Atualiza a permissão (Role) no Supabase
       const { error } = await db
         .from('profiles')
         .update({ 
@@ -574,16 +571,13 @@
 
       if (error) {
         btnSave.disabled = false;
-        btnSave.textContent = 'Salvar Alterações';
+        btnSave.textContent = 'Salvar Diretrizes';
         showToast('Falha operacional: ' + error.message, 'error');
         return;
       }
 
-      // 2. Processa e unifica os Vínculos Familiares baseados na alteração
       try {
         let vinculos = JSON.parse(localStorage.getItem('rota_segura_vinculos') || '[]');
-
-        // Remove quaisquer associações antigas deste usuário para evitar duplicidade estrutural
         vinculos = vinculos.filter(v => v.aluno_id !== targetId && v.responsavel_id !== targetId);
 
         if (newRole === 'aluno' && targetRelationId) {
@@ -609,9 +603,9 @@
 
         localStorage.setItem('rota_segura_vinculos', JSON.stringify(vinculos));
 
-        // Envia tentativa em background para a tabela do banco, se existir
         await db.from('user_relationships').delete().eq('aluno_id', targetId);
         await db.from('user_relationships').delete().eq('responsavel_id', targetId);
+        
         if (newRole === 'aluno' && targetRelationId) {
           await db.from('user_relationships').insert([{ aluno_id: targetId, responsavel_id: targetRelationId }]);
         } else if (newRole === 'responsavel' && targetRelationId) {
@@ -619,11 +613,11 @@
         }
 
       } catch (errRel) {
-        console.warn("Persistência de relações unificada localmente.");
+        console.warn("Persistência de relações em barramento unificado.");
       }
 
       btnSave.disabled = false;
-      btnSave.textContent = 'Salvar Alterações';
+      btnSave.textContent = 'Salvar Diretrizes';
       closeModal();
       showToast('Privilégios e vínculos atualizados com sucesso.', 'success');
       fetchUsers(); 

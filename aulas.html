@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rota Segura | Gestão de Aulas e Turmas</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -145,6 +148,27 @@
     .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
     .topbar h1 { font-size: 1.7rem; }
     .topbar p  { color: var(--text2); margin-top: 4px; font-size: 0.87rem; }
+
+    /* Estilização do Perfil Administrador */
+    .profile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      flex-shrink: 0;
+    }
+    .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+    .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
+    .profile-text small { font-size: 0.7rem; color: #73ffbb; font-family: var(--mono); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(115,255,187,0.07);
+      border: 1px solid rgba(115,255,187,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #73ffbb;
+    }
+    .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
   </style>
 </head>
 <body>
@@ -160,6 +184,8 @@
       <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
       <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
       <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
+      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
+      <a href="alunoadmin.html"><i class="fa-solid fa-chalkboard-user"></i><span>Aulas Aluno</span></a>
       <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
     </nav>
     <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
@@ -172,6 +198,10 @@
         <div class="topbar-eyebrow">root@rota-segura:~/aulas_config$</div>
         <h1>Controle de Turmas & Cronograma Escolar</h1>
         <p>Atribuição de alunos a turmas e lançamento de agendas diárias e observações de aulas vagas</p>
+      </div>
+      <div class="profile">
+        <div class="profile-text"><span id="Username">Buscando...</span><small>Administrador</small></div>
+        <div class="avatar"></div>
       </div>
     </header>
 
@@ -188,8 +218,7 @@
             <button type="submit" class="btn-cyber">Inicializar Turma</button>
           </form>
 
-          <div style="margin-top: 16px;" id="listaTurmasSimples">
-            </div>
+          <div style="margin-top: 16px;" id="listaTurmasSimples"></div>
         </div>
 
         <div class="panel-box">
@@ -259,21 +288,18 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Carregamento de dados locais seguros sincronizáveis
     let turmas   = JSON.parse(localStorage.getItem('rs_turmas') || '[]');
     let alunos   = JSON.parse(localStorage.getItem('rs_alocacoes') || '[]');
     let agenda   = JSON.parse(localStorage.getItem('rs_agenda_aulas') || '[]');
 
     async function checkSession() {
       try {
-        // 1. Pega o usuário logado na sessão ativa
         const { data: { user }, error: authError } = await db.auth.getUser();
         if (authError || !user) { 
           window.location.href = 'login.html'; 
           return; 
         }
         
-        // 2. Busca o perfil e valida se o cargo dele é ADMINISTRADOR
         const { data: profile, error: profError } = await db
           .from('profiles')
           .select('display_name, role')
@@ -281,12 +307,13 @@
           .maybeSingle();
 
         if (profError || !profile || profile.role?.toLowerCase() !== 'administrador') {
-          // Se não for admin, redireciona para o painel de aluno comum
           window.location.href = 'login-user.html'; 
           return; 
         }
 
-        // 3. Se passou na validação com sucesso, alimenta a lista de alunos vinda do Banco de Perfis
+        // Atualiza dinamicamente o display do Administrador na Topbar
+        document.getElementById('Username').innerText = profile.display_name || user.email.split('@')[0];
+
         const { data: profiles } = await db
           .from('profiles')
           .select('id, display_name')
@@ -301,7 +328,6 @@
           });
         }
 
-        // 4. Inicializa o layout das turmas na UI
         renderTurmasUI();
 
       } catch (err) {
@@ -337,7 +363,6 @@
       if(selectAgenda && valorAgendaAtual) selectAgenda.value = valorAgendaAtual;
     }
 
-    // Criar Turma
     document.getElementById('formTurma').addEventListener('submit', (e) => {
       e.preventDefault();
       const nome = document.getElementById('nomeTurma').value.trim();
@@ -349,14 +374,12 @@
       }
     });
 
-    // Alocar Aluno
     document.getElementById('formAlocacao').addEventListener('submit', (e) => {
       e.preventDefault();
       const alunoId   = document.getElementById('selectAluno').value;
       const alunoNome = document.getElementById('selectAluno').options[document.getElementById('selectAluno').selectedIndex].text;
       const turmaNome = document.getElementById('selectTurmaAlocacao').value;
 
-      // Filtra para remover alocação antiga e insere na nova turma
       alunos = alunos.filter(a => a.aluno_id !== alunoId);
       alunos.push({ aluno_id: alunoId, aluno_nome: alunoNome, turma: turmaNome });
       localStorage.setItem('rs_alocacoes', JSON.stringify(alunos));
@@ -364,7 +387,6 @@
       alert(`Estudante alocado com sucesso ao ${turmaNome}!`);
     });
 
-    // Filtro de exibição de Agenda por Turma
     const selectAgenda = document.getElementById('selectTurmaAgenda');
     const formNovaAula = document.getElementById('formNovaAula');
     
@@ -405,7 +427,6 @@
       });
     }
 
-    // Gravar Nova Aula
     document.getElementById('formNovaAula').addEventListener('submit', (e) => {
       e.preventDefault();
       const turma   = selectAgenda.value;
@@ -423,7 +444,6 @@
       renderCronograma(turma);
     });
 
-    // Funções expostas globalmente para exclusão fácil nas tabelas de visualização rápida
     window.deletarTurma = (idx) => {
       turmas.splice(idx, 1);
       localStorage.setItem('rs_turmas', JSON.stringify(turmas));
