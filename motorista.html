@@ -2,291 +2,407 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rota Segura | Painel do Motorista</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Rota Segura · GPS</title>
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
-      --bg: #11121d;
-      --card: #1a1c30;
-      --border: #2f3352;
-      --primary: #abd2fa;
-      --success: #73ffbb;
-      --error: #ff6b6b;
-      --text: #ffffff;
-      --text2: #767993;
+      --bg:     #1e2035;
+      --card:   #252841;
+      --border: #3a3e5e;
+      --mint:   #73ffbb;
+      --sky:    #abd2fa;
+      --amber:  #f9b17a;
+      --red:    #ff6b6b;
+      --text:   #ffffff;
+      --dim:    #a0a3c4;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background-color: var(--bg);
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
       color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 15px;
-    }
-
-    .mobile-container {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      width: 100%;
-      max-width: 400px;
-      padding: 25px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
       gap: 20px;
     }
 
-    .app-header {
-      text-align: center;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border);
-    }
-    .app-header h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
-    .app-header p { font-size: 0.85rem; color: var(--text2); margin-top: 4px; }
-
-    /* Tela de Pareamento Inicial */
-    .pairing-screen { display: flex; flex-direction: column; gap: 15px; }
-    
-    .input-group { display: flex; flex-direction: column; gap: 6px; }
-    .input-group label { font-size: 0.8rem; font-weight: 600; color: var(--primary); text-transform: uppercase; }
-    .input-group input, .input-group select {
-      background: #11121d;
-      border: 1px solid var(--border);
-      padding: 14px;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 1rem;
-      outline: none;
-      text-align: center;
-    }
-    .input-group input:focus { border-color: var(--primary); }
-
-    /* Tela de Transmissão Ativa (Cockpit) */
-    .cockpit-screen { display: none; flex-direction: column; gap: 20px; text-align: center; }
-
-    .transmission-badge {
-      align-self: center;
-      background: rgba(115, 255, 187, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 0.8rem;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
       font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      animation: pulse 2s infinite;
+      color: var(--dim);
     }
+    .brand svg { color: var(--mint); width: 18px; height: 18px; }
 
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-
-    .telemetry-display {
-      background: #11121d;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    .telemetry-box { display: flex; flex-direction: column; gap: 4px; }
-    .telemetry-box small { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; }
-    .telemetry-box span { font-size: 1.2rem; font-weight: 700; color: #fff; }
-
-    /* Botões */
-    .btn {
-      background: var(--primary);
-      color: #11121d;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
+    .card {
       width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    /* pulsing dot */
+    .status-ring {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      background: rgba(115,255,187,0.06);
+      border: 2px solid rgba(115,255,187,0.2);
+    }
+    .status-ring svg { width: 38px; height: 38px; color: var(--mint); }
+    .status-ring::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid var(--mint);
+      opacity: 0;
+      animation: ripple 2.2s ease-out infinite;
+    }
+    .status-ring::after {
+      content: '';
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      border: 2px solid var(--mint);
+      opacity: 0;
+      animation: ripple 2.2s ease-out infinite;
+      animation-delay: 0.5s;
+    }
+    .status-ring.inactive svg { color: var(--dim); }
+    .status-ring.inactive { border-color: var(--border); background: transparent; }
+    .status-ring.inactive::before,
+    .status-ring.inactive::after { display: none; }
+    .status-ring.error svg { color: var(--red); }
+    .status-ring.error { border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.06); }
+
+    @keyframes ripple {
+      0%   { transform: scale(1);  opacity: 0.5; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .status-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+    .status-sub {
+      font-size: 0.85rem;
+      color: var(--dim);
+      line-height: 1.55;
+    }
+
+    /* info grid */
+    .info-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    .btn:hover { opacity: 0.9; }
-    .btn-stop { background: var(--error); color: #fff; }
+    .info-cell {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: left;
+    }
+    .info-cell label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+    .info-cell span {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .info-cell span.live { color: var(--mint); }
 
-    /* Mensagem de Feedback (Toast Móvel) */
-    #statusMessage {
-      font-size: 0.85rem;
+    /* buttons */
+    .btn-start {
+      width: 100%;
+      height: 54px;
+      background: var(--mint);
+      color: #1a1f3a;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-start:hover  { background: var(--sky); }
+    .btn-start:active { transform: scale(0.98); }
+    .btn-start:disabled { background: var(--border); color: #5a5f82; cursor: not-allowed; }
+
+    .btn-stop {
+      width: 100%;
+      height: 54px;
+      background: rgba(255,107,107,0.1);
+      color: var(--red);
+      border: 1px solid rgba(255,107,107,0.35);
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-stop:hover { background: rgba(255,107,107,0.18); }
+
+    .update-log {
+      width: 100%;
+      font-size: 0.7rem;
+      color: var(--dim);
       text-align: center;
-      color: var(--text2);
-      min-height: 20px;
+    }
+
+    .error-box {
+      width: 100%;
+      max-width: 360px;
+      background: rgba(255,107,107,0.08);
+      border: 1px solid rgba(255,107,107,0.3);
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 0.82rem;
+      color: var(--red);
+      text-align: center;
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<div class="mobile-container">
-  
-  <header class="app-header">
-    <h1>Rota Segura Fleets</h1>
-    <p id="driverWelcome">Identificando motorista corporativo...</p>
-  </header>
-
-  <div id="screenPairing" class="pairing-screen">
-    <div class="input-group">
-      <label>Prefixo do Ônibus</label>
-      <select id="busSelect">
-        <option value="402">Ônibus 402 - Rota 01</option>
-        <option value="305">Ônibus 305 - Rota Rural</option>
-      </select>
-    </div>
-
-    <div class="input-group">
-      <label>Token do Painel CCO</label>
-      <input type="number" id="pairingToken" placeholder="Digite os 6 dígitos" max="999999">
-    </div>
-
-    <button id="btnStartTrip" class="btn"><i class="fa-solid fa-play"></i> Iniciar Transmissão</button>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+      <circle cx="12" cy="10" r="2.4"/>
+    </svg>
+    Rota Segura
   </div>
 
-  <div id="screenCockpit" class="cockpit-screen">
-    <div class="transmission-badge">Sinal GPS Conectado</div>
-    
-    <div class="telemetry-display">
-      <div class="telemetry-box" style="grid-column: span 2; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <small>Destino Principal</small>
-        <span style="color: var(--primary); font-size: 1rem;"><i class="fa-solid fa-school"></i> C. E. Pres. Roosevelt</span>
+  <div class="card">
+    <div class="status-ring inactive" id="statusRing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+        <circle cx="12" cy="10" r="2.4"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="status-title" id="statusTitle">GPS inativo</div>
+      <div class="status-sub" id="statusSub">Pressione Iniciar Transmissão para enviar sua localização em tempo real.</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-cell">
+        <label>Veículo</label>
+        <span id="infoVehicle">—</span>
       </div>
-      <div class="telemetry-box">
-        <small>Latitude</small>
-        <span id="txtLat">---</span>
+      <div class="info-cell">
+        <label>Status</label>
+        <span id="infoStatus">Aguardando</span>
       </div>
-      <div class="telemetry-box">
-        <small>Longitude</small>
-        <span id="txtLon">---</span>
+      <div class="info-cell">
+        <label>Latitude</label>
+        <span id="infoLat" class="live">—</span>
+      </div>
+      <div class="info-cell">
+        <label>Longitude</label>
+        <span id="infoLon" class="live">—</span>
       </div>
     </div>
 
-    <button id="btnStopTrip" class="btn btn-stop"><i class="fa-solid fa-square"></i> Encerrar Rota</button>
+    <button class="btn-start" id="btnStart">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      Iniciar Transmissão
+    </button>
+
+    <button class="btn-stop" id="btnStop" style="display:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+      </svg>
+      Parar Transmissão
+    </button>
+
+    <div class="update-log" id="updateLog">—</div>
   </div>
 
-  <p id="statusMessage">Aguardando pareamento de hardware.</p>
-
-</div>
+  <div class="error-box" id="errorBox"></div>
 
 <script>
   (() => {
-    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
-    
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let geoWatchId = null;
-    let currentBus = null;
+    // Lê o bus_id da URL — ex: motorista.html?bus_id=402
+    const params = new URLSearchParams(window.location.search);
+    const busId  = params.get('bus_id');
 
-    async function checkDriverSession() {
-      const { data: { user }, error } = await db.auth.getUser();
-      if (error || !user) { window.location.href = 'login.html'; return; }
-      
-      document.getElementById('driverWelcome').innerText = `Motorista: ${user.email.split('@')[0]}`;
+    const ring       = document.getElementById('statusRing');
+    const titleEl    = document.getElementById('statusTitle');
+    const subEl      = document.getElementById('statusSub');
+    const infoVeh    = document.getElementById('infoVehicle');
+    const infoSt     = document.getElementById('infoStatus');
+    const infoLat    = document.getElementById('infoLat');
+    const infoLon    = document.getElementById('infoLon');
+    const btnStart   = document.getElementById('btnStart');
+    const btnStop    = document.getElementById('btnStop');
+    const updateLog  = document.getElementById('updateLog');
+    const errorBox   = document.getElementById('errorBox');
 
-      // MEMÓRIA RESILIENTE: Verifica se o motorista já estava transmitindo antes da página reiniciar
-      const savedBus = localStorage.getItem('active_bus_drive');
-      if (savedBus) {
-        currentBus = savedBus;
-        document.getElementById('screenPairing').style.display = 'none';
-        document.getElementById('screenCockpit').style.display = 'flex';
-        updateStatus("Reconectando transmissão interrompida...", "success");
-        startGpsTracking();
+    let watchId      = null;
+    let sendInterval = null;
+    let lastLat      = null;
+    let lastLon      = null;
+
+    // Sem bus_id na URL = link inválido
+    if (!busId) {
+      showError('Link inválido. Peça ao administrador um novo link de pareamento.');
+      btnStart.disabled = true;
+    } else {
+      infoVeh.textContent = `Prefixo ${busId}`;
+    }
+
+    function showError(msg) {
+      errorBox.textContent  = msg;
+      errorBox.style.display = 'block';
+      ring.className = 'status-ring error';
+      titleEl.textContent = 'Erro';
+      subEl.textContent   = msg;
+    }
+
+    function setActive(active) {
+      if (active) {
+        ring.className      = 'status-ring';
+        titleEl.textContent = 'Transmitindo';
+        subEl.textContent   = 'Sua localização está sendo enviada ao painel em tempo real.';
+        infoSt.textContent  = 'Transmitindo';
+        btnStart.style.display = 'none';
+        btnStop.style.display  = 'flex';
+      } else {
+        ring.className      = 'status-ring inactive';
+        titleEl.textContent = 'GPS inativo';
+        subEl.textContent   = 'Pressione Iniciar Transmissão para enviar sua localização.';
+        infoSt.textContent  = 'Parado';
+        infoLat.textContent = '—';
+        infoLon.textContent = '—';
+        updateLog.textContent = '—';
+        btnStart.style.display = 'flex';
+        btnStop.style.display  = 'none';
       }
     }
 
-    function startGpsTracking() {
-      if (!("geolocation" in navigator)) {
-        updateStatus("Seu celular não possui suporte a GPS.", "error");
+    async function sendPosition(lat, lon) {
+      lastLat = lat;
+      lastLon = lon;
+
+      infoLat.textContent = lat.toFixed(6);
+      infoLon.textContent = lon.toFixed(6);
+
+      const { error } = await db.from('bus_positions').upsert({
+        bus_id:    busId,
+        latitude:  lat,
+        longitude: lon,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'bus_id' });
+
+      const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+      if (error) {
+        updateLog.textContent = `[${now}] Falha ao enviar: ${error.message}`;
+      } else {
+        updateLog.textContent = `[${now}] Posição enviada com sucesso.`;
+      }
+    }
+
+    btnStart.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        showError('Seu navegador não suporta geolocalização.');
         return;
       }
 
-      const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 };
+      btnStart.disabled = true;
 
-      geoWatchId = navigator.geolocation.watchPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          btnStart.disabled = false;
+          setActive(true);
 
-        document.getElementById('txtLat').innerText = lat.toFixed(5);
-        document.getElementById('txtLon').innerText = lon.toFixed(5);
-        updateStatus("Sinal ativo. Transmitindo dados.", "success");
+          // Envia imediatamente
+          sendPosition(pos.coords.latitude, pos.coords.longitude);
 
-        try {
-          // Faz upload mantendo os dados customizados salvos pelo administrador intactos
-          await db.from('bus_positions').upsert({
-            bus_id: currentBus,
-            latitude: lat,
-            longitude: lon,
-            updated_at: new Date().toISOString()
-          });
-        } catch (dbErr) {
-          console.error("Erro na transmissão:", dbErr);
-        }
+          // Continua assistindo a posição
+          watchId = navigator.geolocation.watchPosition(
+            p => sendPosition(p.coords.latitude, p.coords.longitude),
+            err => {
+              updateLog.textContent = 'Erro de GPS: ' + err.message;
+            },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+          );
+        },
+        err => {
+          btnStart.disabled = false;
+          showError('Permissão de localização negada. Habilite o GPS nas configurações do navegador e tente novamente.');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
 
-      }, (err) => {
-        updateStatus("Aguardando sinal estável de GPS...", "error");
-      }, geoOptions);
-    }
-
-    function stopGpsTracking() {
-      if (geoWatchId) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
-      localStorage.removeItem('active_bus_drive');
-    }
-
-    document.getElementById('btnStartTrip').addEventListener('click', () => {
-      const tokenInput = document.getElementById('pairingToken').value.trim();
-      currentBus = document.getElementById('busSelect').value;
-
-      if (tokenInput.length < 6) {
-        updateStatus("Insira o Token de 6 dígitos gerado no CCO.", "error");
-        return;
+    btnStop.addEventListener('click', async () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
       }
 
-      // Salva o prefixo no storage para blindar contra recarregamentos de página
-      localStorage.setItem('active_bus_drive', currentBus);
+      // Zera a posição no banco para que o mapa remova o marcador
+      await db.from('bus_positions').upsert({
+        bus_id:    busId,
+        latitude:  0,
+        longitude: 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'bus_id' });
 
-      document.getElementById('screenPairing').style.display = 'none';
-      document.getElementById('screenCockpit').style.display = 'flex';
-      
-      startGpsTracking();
+      setActive(false);
     });
 
-    document.getElementById('btnStopTrip').addEventListener('click', () => {
-      stopGpsTracking();
-      document.getElementById('screenCockpit').style.display = 'none';
-      document.getElementById('screenPairing').style.display = 'flex';
-      document.getElementById('pairingToken').value = "";
-      updateStatus("Viagem encerrada. Dispositivo despareado.");
-    });
-
-    function updateStatus(msg, type = '') {
-      const statusEl = document.getElementById('statusMessage');
-      statusEl.innerText = msg;
-      if (type === 'error') statusEl.style.color = 'var(--error)';
-      else if (type === 'success') statusEl.style.color = 'var(--success)';
-      else statusEl.style.color = 'var(--text2)';
-    }
-
-    document.addEventListener('DOMContentLoaded', checkDriverSession);
   })();
 </script>
 </body>

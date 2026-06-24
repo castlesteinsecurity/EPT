@@ -353,15 +353,18 @@
       document.getElementById('Username').innerText =
         profile.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
 
+      // Se passou por aqui, o usuário é administrador garantido.
       fetchUsers();
     }
 
     /* ── FETCH USUÁRIOS ── */
     async function fetchUsers() {
+      // Reseta os loadings e contadores nas tabelas
       Object.values(ROLES).forEach(r => {
-        document.getElementById(r.tbody).innerHTML =
-          `<tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>`;
-        document.getElementById(r.count).textContent = '0';
+        const tbodyEl = document.getElementById(r.tbody);
+        const countEl = document.getElementById(r.count);
+        if (tbodyEl) tbodyEl.innerHTML = `<tr class="state-row"><td colspan="4"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+        if (countEl) countEl.textContent = '0';
       });
 
       const { data: profiles, error } = await db
@@ -369,16 +372,10 @@
         .select('id, display_name, email, role')
         .order('display_name', { ascending: true });
 
-      const userRole = (profile?.role || 'aluno').toLowerCase();
-
-      if (userRole === 'aluno' || userRole === 'responsavel' || userRole === 'motorista')
-        window.location.href = "login-user.html"
-        return;
-
       if (error) {
         Object.values(ROLES).forEach(r => {
-          document.getElementById(r.tbody).innerHTML =
-            `<tr class="state-row error"><td colspan="4"><i class="fa-solid fa-circle-xmark"></i> Erro ao carregar dados.</td></tr>`;
+          const tbodyEl = document.getElementById(r.tbody);
+          if (tbodyEl) tbodyEl.innerHTML = `<tr class="state-row error"><td colspan="4"><i class="fa-solid fa-circle-xmark"></i> Erro ao carregar dados.</td></tr>`;
         });
         showToast('Erro ao buscar perfis: ' + error.message, 'error');
         return;
@@ -392,14 +389,17 @@
         if (groups[role]) {
           groups[role].push(u);
         } else {
-          groups['aluno'].push(u); 
+          groups['aluno'].push(u); // Padrão caso venha nulo ou inválido
         }
       });
 
       Object.entries(groups).forEach(([role, users]) => {
-        const cfg   = ROLES[role];
-        const tbody = document.getElementById(cfg.tbody);
-        document.getElementById(cfg.count).textContent = users.length;
+        const cfg     = ROLES[role];
+        const tbody   = document.getElementById(cfg.tbody);
+        const countEl = document.getElementById(cfg.count);
+
+        if (countEl) countEl.textContent = users.length;
+        if (!tbody) return;
 
         if (!users.length) {
           tbody.innerHTML = `<tr class="state-row"><td colspan="4">Nenhum usuário neste grupo.</td></tr>`;
@@ -407,10 +407,10 @@
         }
 
         tbody.innerHTML = users.map(u => {
-          const name  = escHtml(u.display_name || 'Sem nome');
-          const email = escHtml(u.email || 'N/A');
+          const name     = escHtml(u.display_name || 'Sem nome');
+          const email    = escHtml(u.email || 'N/A');
           const userRole = escHtml(u.role || 'aluno');
-          const cfg2  = ROLES[userRole.toLowerCase()] || ROLES['aluno'];
+          const cfg2     = ROLES[userRole.toLowerCase()] || ROLES['aluno'];
           
           return `
             <tr>
@@ -431,6 +431,7 @@
         }).join('');
       });
 
+      // Adiciona os eventos nos botões recém-gerados
       document.querySelectorAll('.btn-action[data-id]').forEach(btn => {
         btn.addEventListener('click', () =>
           openModal(btn.dataset.id, btn.dataset.role, btn.dataset.name, btn.dataset.email));
@@ -444,6 +445,7 @@
     const btnSave   = document.getElementById('btnSaveModal');
 
     function openModal(id, role, name, email) {
+      if (!modal) return;
       inputId.value   = id;
       inputRole.value = role.toLowerCase(); 
       document.getElementById('modalUserName').textContent  = name;
@@ -451,14 +453,14 @@
       modal.style.display = 'flex';
     }
 
-    function closeModal() { modal.style.display = 'none'; }
+    function closeModal() { if (modal) modal.style.display = 'none'; }
 
-    document.getElementById('btnCancelModal').addEventListener('click', closeModal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.getElementById('btnCancelModal')?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     /* ── SALVAR ALTERAÇÃO NO BANCO ── */
-    btnSave.addEventListener('click', async () => {
+    btnSave?.addEventListener('click', async () => {
       const targetId = inputId.value;
       const newRole  = inputRole.value;
 
@@ -488,7 +490,7 @@
     });
 
     /* ── LOGOUT ── */
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
       const { error } = await db.auth.signOut();
       if (!error) window.location.href = 'login.html';
       else showToast('Erro ao deslogar: ' + error.message, 'error');
@@ -498,8 +500,13 @@
     let toastTimer;
     function showToast(msg, type = 'success') {
       const toast = document.getElementById('toast');
-      document.getElementById('toastIcon').className =
-        type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+      if (!toast) return;
+      
+      const icon = document.getElementById('toastIcon');
+      if (icon) {
+        icon.className = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+      }
+      
       document.getElementById('toastMsg').textContent = msg;
       toast.className = `show ${type}`;
       clearTimeout(toastTimer);
