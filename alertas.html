@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rota Segura | Central de Alertas</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    /* Estilos e Variáveis de Escopo Interno */
     .alerts-grid {
       display: grid;
       grid-template-columns: 1.2fr 1fr;
@@ -35,7 +39,6 @@
       gap: 18px;
     }
 
-    /* Painel do Clima e Estresse Térmico integrado ao design do mapa */
     .weather-analysis-card {
       background: #1a1c30;
       border: 1px solid var(--border);
@@ -95,7 +98,6 @@
       transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Lista de Ocorrências Ativas */
     .alert-item-card {
       background: #1d2033;
       border: 1px solid var(--border);
@@ -109,12 +111,8 @@
     }
     .alert-item-card:hover { border-color: rgba(171,210,250,0.25); }
 
-    .alert-item-card.critico { 
-      border-left: 4px solid #ff6b6b; 
-    }
-    .alert-item-card.atencao { 
-      border-left: 4px solid #f9b17a; 
-    }
+    .alert-item-card.critico { border-left: 4px solid #ff6b6b; }
+    .alert-item-card.atencao { border-left: 4px solid #f9b17a; }
 
     .alert-icon-zone {
       width: 36px;
@@ -151,10 +149,7 @@
       white-space: nowrap;
     }
 
-    .alert-actions {
-      display: flex;
-      gap: 6px;
-    }
+    .alert-actions { display: flex; gap: 6px; }
 
     .btn-alert-action {
       background: rgba(255,255,255,0.02);
@@ -168,7 +163,7 @@
       align-items: center;
       justify-content: center;
       font-size: 0.75rem;
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      transition: all 0.2s;
     }
     .btn-alert-action.edit:hover { background: rgba(249,177,122,0.08); color: var(--primary); border-color: rgba(249,177,122,0.35); }
     .btn-alert-action.delete:hover { background: rgba(255,107,107,0.12); color: #ff6b6b; border-color: rgba(255,107,107,0.35); }
@@ -190,28 +185,22 @@
 
     .profile {
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 16px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.02);
-      flex-shrink: 0;
+      padding: 10px 16px; border: 1px solid var(--border);
+      border-radius: 10px; background: rgba(255,255,255,0.02); flex-shrink: 0;
     }
     .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
     .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
     .profile-text small { font-size: 0.7rem; color: #73ffbb; }
     .avatar {
       width: 36px; height: 36px; border-radius: 8px;
-      background: rgba(115,255,187,0.07);
-      border: 1px solid rgba(115,255,187,0.2);
-      display: flex; align-items: center; justify-content: center;
-      color: #73ffbb;
+      background: rgba(115,255,187,0.07); border: 1px solid rgba(115,255,187,0.2);
+      display: flex; align-items: center; justify-content: center; color: #73ffbb;
     }
     .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 
     #toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: var(--card);
-      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
       padding: 13px 18px; font-size: 0.83rem;
       display: flex; align-items: center; gap: 10px;
       box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 99999;
@@ -223,6 +212,17 @@
     #toast.success i { color: #73ffbb; }
     #toast.error   { border-color: #ff6b6b; }
     #toast.error i { color: #ff6b6b; }
+
+    /* Estilos fixos do Modal */
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-content {
+      background: #1a1c30; border: 1px solid var(--border); border-radius: 18px;
+      padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 10px 32px rgba(0,0,0,0.3);
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
     @media(max-width: 1024px) {
       .alerts-grid { grid-template-columns: 1fr; height: auto; }
@@ -263,13 +263,11 @@
     </header>
 
     <div class="alerts-grid">
-      
       <div class="alerts-list-side">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <div class="panel-section-title" style="margin: 0;"><i class="fa-solid fa-bell" style="margin-right: 6px;"></i>Eventos Recentes</div>
           <button id="btnOpenCreateModal" class="btn-save" style="padding: 6px 12px; font-size: 0.78rem;"><i class="fa-solid fa-plus"></i> Novo Alerta</button>
         </div>
-
         <div id="incidentsContainer" style="flex: 1; overflow-y: auto;"></div>
       </div>
 
@@ -298,11 +296,9 @@
             <p style="font-size: 0.75rem; color: var(--text2); margin-top: 4px; line-height: 1.3;">
               Cálculo baseado em dados de fadiga mecânica e condutividade pneumática sob temperatura severa.
             </p>
-
             <div class="efficiency-bar-container">
               <div id="efficiencyBar" class="efficiency-bar"></div>
             </div>
-
             <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600;">
               <span style="color: var(--text2);">Perda de Rendimento Real:</span>
               <span id="lossPercentageText" style="color: #ff6b6b;">0%</span>
@@ -310,14 +306,13 @@
           </div>
         </div>
       </div>
-
     </div>
   </main>
 </div>
 
 <div id="alertModal" class="modal">
-  <div class="modal-content" style="max-width: 440px;">
-    <h3 id="modalTitle">Emitir Alerta à Frota</h3>
+  <div class="modal-content">
+    <h3 id="modalTitle" style="color:#fff; font-family:'Quicksand',sans-serif; margin-bottom:4px;">Emitir Alerta à Frota</h3>
     <p style="font-size:0.83rem; color:var(--text2); margin-bottom:16px;">
       Cadastre anomalias ou bloqueios de rotas no sistema central.
     </p>
@@ -325,26 +320,26 @@
       <input type="hidden" id="alertId">
       
       <div class="input-box" style="margin-bottom: 14px;">
-        <label>Título do Alerta</label>
-        <input type="text" id="alertTitleField" placeholder="Ex: Atraso na Rota Norte" required>
+        <label style="display:block; font-size:0.75rem; color:var(--text2); margin-bottom:4px;">Título do Alerta</label>
+        <input type="text" id="alertTitleField" style="width:100%; background:#11121d; border:1px solid var(--border); padding:10px; border-radius:8px; color:#fff; outline:none;" placeholder="Ex: Atraso na Rota Norte" required>
       </div>
 
       <div class="input-box" style="margin-bottom: 14px;">
-        <label>Descrição Ocorrência</label>
-        <textarea id="alertDescField" placeholder="Escreva o comunicado detalhado para os usuários..." style="background: #11121d; border: 1px solid var(--border); padding: 12px; border-radius: 8px; outline: none; color: white; resize: none; height: 90px; font-size: 0.82rem; font-family: inherit;" required></textarea>
+        <label style="display:block; font-size:0.75rem; color:var(--text2); margin-bottom:4px;">Descrição Ocorrência</label>
+        <textarea id="alertDescField" placeholder="Escreva o comunicado detalhado..." style="width:100%; background: #11121d; border: 1px solid var(--border); padding: 12px; border-radius: 8px; outline: none; color: white; resize: none; height: 90px; font-size: 0.82rem; font-family: inherit;" required></textarea>
       </div>
 
       <div class="input-box" style="margin-bottom: 14px;">
-        <label>Nível de Gravidade</label>
-        <select id="alertTypeField" required>
+        <label style="display:block; font-size:0.75rem; color:var(--text2); margin-bottom:4px;">Nível de Gravidade</label>
+        <select id="alertTypeField" style="width:100%; background:#11121d; border:1px solid var(--border); padding:10px; border-radius:8px; color:#fff; outline:none;" required>
           <option value="critico">Crítico (Vermelho - Bloqueios / Falhas Críticas)</option>
           <option value="atencao">Atenção (Laranja - Desvios / Clima / Lentidão)</option>
         </select>
       </div>
 
-      <div class="modal-actions" style="margin-top: 16px;">
-        <button type="button" id="btnCancelModal" class="btn-cancel">Cancelar</button>
-        <button type="submit" class="btn-save">Publicar Alerta</button>
+      <div class="modal-actions">
+        <button type="button" id="btnCancelModal" class="btn-cancel" style="background:none; border:1px solid var(--border); color:var(--text2); padding:8px 16px; border-radius:8px; cursor:pointer;">Cancelar</button>
+        <button type="submit" class="btn-save" style="padding:8px 16px; border-radius:8px;">Publicar Alerta</button>
       </div>
     </form>
   </div>
@@ -360,8 +355,11 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let systemIncidents = [];
 
+    // Chave padronizada para o ecossistema Rota Segura (compartilhada com os usuários)
+    const STORAGE_KEY = 'rs_incidentes_globais';
+
     function loadIncidents() {
-      const saved = localStorage.getItem('rota_segura_incidentes');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         systemIncidents = JSON.parse(saved);
       } else {
@@ -374,7 +372,7 @@
     }
 
     function saveIncidents() {
-      localStorage.setItem('rota_segura_incidentes', JSON.stringify(systemIncidents));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(systemIncidents));
       updateSidebarNotification();
     }
 
@@ -456,7 +454,6 @@
         document.getElementById('weatherIconZone').innerHTML = iconHtml;
 
         let lossPercentage = 0;
-
         if (currentTemp > 24) {
           lossPercentage = Math.round((currentTemp - 24) * 2.5);
         } else if (currentTemp < 18) {
