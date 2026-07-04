@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Segura · About Us</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&family=Cinzel:wght@400;600;700&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg:            #f0f5f2;
+      --surface:       #ffffff;
+      --surface-2:     #f7faf8;
+      --sidebar-bg:    rgba(255,255,255,0.82);
+      --border:        rgba(61,160,100,0.18);
+      --border-strong: rgba(61,160,100,0.32);
+      --primary:       #2b7a57;
+      --primary-mid:   #3dac76;
+      --primary-light: rgba(43,122,87,0.09);
+      --text:          #1a2e24;
+      --text-sub:      #5c7466;
+      --text-muted:    #92a89c;
+      --red:           #e05252;
+      --amber:         #c8860a;
+      --gold:          #b8860b;
+      --gold-light:    #f5d679;
+      --gold-pale:     #fdf3d0;
+      --shadow:        0 2px 16px rgba(43,122,87,0.07);
+      --shadow-md:     0 4px 24px rgba(43,122,87,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: rgba(61,172,118,0.06);
+      top: -150px; right: -120px;
+      pointer-events: none; z-index: 0;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px; min-height: 100vh;
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-right: 1px solid var(--border);
+      padding: 24px 14px;
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 50; transition: transform 0.3s ease;
+    }
+    .sb-dots { display: flex; gap: 6px; margin-bottom: 20px; }
+    .sb-dot  { width: 10px; height: 10px; border-radius: 50%; }
+    .sb-dot:nth-child(1) { background: #ff5f57; }
+    .sb-dot:nth-child(2) { background: #febc2e; }
+    .sb-dot:nth-child(3) { background: #28c840; }
+
+    .sb-brand { display: flex; align-items: center; gap: 9px; padding: 0 6px; margin-bottom: 32px; }
+    .sb-brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; color: #fff; font-size: 1rem; flex-shrink: 0;
+    }
+    .sb-brand-name { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 1rem; color: var(--primary); line-height: 1.2; }
+    .sb-brand-sub  { font-size: 0.65rem; color: var(--text-muted); }
+
+    .sb-section-label {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 2px;
+      color: var(--text-muted); text-transform: uppercase;
+      padding: 0 10px; margin-bottom: 8px;
+    }
+    .sb-nav { display: flex; flex-direction: column; gap: 3px; }
+    .sb-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 12px; border-radius: 14px;
+      color: var(--text-sub); font-size: 0.88rem; font-weight: 600;
+      transition: all 0.18s; position: relative;
+    }
+    .sb-item i { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .sb-item:hover { background: var(--primary-light); color: var(--primary); }
+    .sb-item.active { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+    .sb-item.active::before {
+      content: ''; position: absolute; left: -14px; top: 20%; height: 60%;
+      width: 4px; background: var(--primary); border-radius: 0 3px 3px 0;
+    }
+    .sb-divider { height: 1px; background: var(--border); margin: 14px 6px; }
+    .sb-footer { margin-top: auto; }
+    .btn-logout {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 10px 12px; border-radius: 14px;
+      background: none; border: none; color: var(--red);
+      font-family: 'Nunito', sans-serif; font-size: 0.84rem; font-weight: 700;
+      cursor: pointer; transition: background 0.18s;
+    }
+    .btn-logout:hover { background: rgba(224,82,82,0.08); }
+
+    /* ── Mobile ── */
+    .mobile-topbar {
+      display: none; position: fixed; top: 0; left: 0; right: 0;
+      height: 56px; background: var(--surface); border-bottom: 1px solid var(--border);
+      z-index: 60; align-items: center; justify-content: space-between; padding: 0 16px;
+    }
+    .mobile-logo { font-family: 'Quicksand', sans-serif; font-weight: 700; color: var(--primary); }
+    .btn-menu { background: none; border: none; color: var(--primary); font-size: 1.3rem; cursor: pointer; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 40; }
+    .overlay.open { display: block; }
+
+    /* ── Content ── */
+    .content {
+      margin-left: 240px; flex: 1;
+      padding: 40px 36px 64px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 40px; text-align: center; }
+    .page-header .chapter-eye {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .page-header .chapter-eye::before,
+    .page-header .chapter-eye::after {
+      content: ''; flex: 1; max-width: 80px; height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-light));
+    }
+    .page-header .chapter-eye::after {
+      background: linear-gradient(to left, transparent, var(--gold-light));
+    }
+    .page-header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.4rem; font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .page-header h1 span { color: var(--primary); }
+    .page-header p {
+      font-size: 0.92rem; color: var(--text-sub);
+      max-width: 520px; margin: 0 auto; line-height: 1.7;
+    }
+
+    /* ── Cards grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      max-width: 960px;
+      margin: 0 auto 48px;
+    }
+
+    /* ── Tarot Card ── */
+    .tarot-card {
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+    .tarot-card:hover {
+      transform: translateY(-6px) rotate(-0.5deg);
+      box-shadow: 0 20px 50px rgba(43,122,87,0.14);
+    }
+
+    /* card top ornament */
+    .card-ornament {
+      height: 6px;
+      background: linear-gradient(90deg, var(--gold-light), var(--gold), var(--gold-light));
+    }
+
+    /* card numeral badge */
+    .card-numeral {
+      position: absolute;
+      top: 18px; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--gold);
+      background: var(--surface);
+      border: 1px solid rgba(184,134,11,0.3);
+      border-radius: 20px;
+      padding: 3px 14px;
+      z-index: 3;
+      white-space: nowrap;
+    }
+
+    /* illustration area — real image */
+    .card-art {
+      position: relative;
+      overflow: hidden;
+      background: #050505;
+    }
+    .card-art-image {
+      height: 380px;
+    }
+    .card-art-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .tarot-card:hover .card-art-image img {
+      transform: scale(1.04);
+    }
+
+    /* card body */
+    .card-body {
+      padding: 22px 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .card-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem; letter-spacing: 2px;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .card-role-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--gold-pale);
+      border: 1px solid rgba(184,134,11,0.3);
+      color: #7a5a00;
+      font-size: 0.65rem; font-weight: 800;
+      padding: 4px 10px; border-radius: 20px;
+      white-space: nowrap; flex-shrink: 0;
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(184,134,11,0.25), transparent);
+    }
+
+    .card-desc {
+      font-size: 0.85rem; color: var(--text-sub);
+      line-height: 1.7;
+    }
+
+    /* stat row inside card */
+    .card-stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--text-sub);
+    }
+    .stat-pill i { font-size: 0.75rem; color: var(--primary); }
+    .stat-pill.gold { background: var(--gold-pale); border-color: rgba(184,134,11,0.25); color: #7a5a00; }
+    .stat-pill.gold i { color: var(--gold); }
+
+    /* arcana flavor text */
+    .arcana-text {
+      background: var(--surface-2);
+      border: 1px solid rgba(184,134,11,0.18);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      font-style: italic;
+      line-height: 1.6;
+      position: relative;
+    }
+    .arcana-text::before {
+      content: '"';
+      position: absolute; top: -6px; left: 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem; color: rgba(184,134,11,0.3);
+      line-height: 1;
+    }
+
+    /* card bottom banner */
+    .card-banner {
+      background: linear-gradient(135deg, #0e1a14, #162b1e);
+      border-top: 1px solid rgba(184,134,11,0.2);
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-banner-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 1.5px;
+    }
+    .card-banner-icon { font-size: 1rem; color: rgba(184,134,11,0.6); }
+
+    /* ── Project lore section ── */
+    .lore-section {
+      max-width: 700px;
+      margin: 0 auto 48px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .lore-header {
+      background: linear-gradient(135deg, #0e1a14, #162b1e);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .lore-header-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(184,134,11,0.15);
+      border: 1px solid rgba(184,134,11,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: var(--gold-light); flex-shrink: 0;
+    }
+    .lore-header h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem; font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 1px;
+    }
+    .lore-header p { font-size: 0.72rem; color: rgba(200,180,130,0.6); margin-top: 2px; }
+    .lore-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 14px; }
+    .lore-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .lore-item-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--gold-pale);
+      border: 1px solid rgba(184,134,11,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 700;
+      color: #7a5a00; flex-shrink: 0; margin-top: 1px;
+    }
+    .lore-item-text h4 {
+      font-size: 0.87rem; font-weight: 700; color: var(--text); margin-bottom: 3px;
+    }
+    .lore-item-text p { font-size: 0.78rem; color: var(--text-sub); line-height: 1.6; }
+
+    /* ── Tech stack ── */
+    .tech-section {
+      max-width: 700px;
+      margin: 0 auto 56px;
+      text-align: center;
+    }
+    .tech-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem; letter-spacing: 3px;
+      color: var(--gold); text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px; justify-content: center;
+    }
+    .tech-eyebrow::before, .tech-eyebrow::after {
+      content: ''; flex: 1; max-width: 60px; height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-light));
+    }
+    .tech-eyebrow::after { background: linear-gradient(to left, transparent, var(--gold-light)); }
+    .tech-pills {
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    }
+    .tech-pill {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 0.8rem; font-weight: 700;
+      color: var(--text-sub);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .tech-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(43,122,87,0.12); }
+    .tech-pill i { font-size: 0.9rem; }
+
+    /* ── Footer note ── */
+    .footer-note {
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem; letter-spacing: 2px;
+      color: var(--text-muted);
+      padding-bottom: 20px;
+    }
+
+    /* ── Animations ── */
+    @keyframes floatGlyph {
+      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+      33%  { transform: translateY(-12px) rotate(5deg); opacity: 0.4; }
+      66%  { transform: translateY(6px) rotate(-3deg); opacity: 0.9; }
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes rotateSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 800px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 4px 0 40px rgba(0,0,0,0.12); }
+      .content { margin-left: 0; padding: 80px 16px 40px; }
+      .mobile-topbar { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-topbar">
+  <span class="mobile-logo"><i class="fa-solid fa-location-dot" style="color:var(--primary);margin-right:6px;"></i>Rota Segura</span>
+  <button class="btn-menu" id="btnMenuOpen"><i class="fa-solid fa-bars"></i></button>
+</div>
+<div class="overlay" id="overlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-dots">
+    <div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div>
+  </div>
+  <div class="sb-brand">
+    <div class="sb-brand-icon"><i class="fa-solid fa-location-dot"></i></div>
+    <div>
+      <div class="sb-brand-name">Rota Segura</div>
+      <div class="sb-brand-sub">Portal do Aluno</div>
+    </div>
+  </div>
+  <div class="sb-section-label">Navegação</div>
+  <nav class="sb-nav">
+    <a href="dashboard-user.html" class="sb-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+    <a href="aluno.html"          class="sb-item"><i class="fa-solid fa-user-graduate"></i><span>Aluno</span></a>
+    <a href="sugestoes.html"      class="sb-item"><i class="fa-solid fa-comment-dots"></i><span>Sugestões</span></a>
+    <a href="alertas-user.html"   class="sb-item"><i class="fa-solid fa-bell"></i><span>Alertas</span></a>
+    <div class="sb-divider"></div>
+    <a href="aboutus.html" class="sb-item active"><i class="fa-solid fa-scroll"></i><span>About Us</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-divider"></div>
+    <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i>Sair do portal</button>
+  </div>
+</aside>
+
+<!-- Content -->
+<main class="content">
+
+  <!-- Page header -->
+  <div class="page-header fade-up">
+    <div class="chapter-eye">Codex da Plataforma</div>
+    <h1>Os <span>Arquitetos</span> do Sistema</h1>
+    <p>Conheça os arquitetos do Rota Segura — um sistema nascido da insegurança real de responsáveis e da necessidade urgente de saber onde cada criança está, a cada momento da rota.</p>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="cards-grid">
+
+    <!-- THE DEV -->
+    <div class="tarot-card fade-up">
+      <div class="card-ornament"></div>
+      <div class="card-numeral">XV · THE DEV</div>
+
+      <div class="card-art card-art-image">
+        <img src="card1.png" alt="The Dev — Ronald Oliveira" loading="lazy">
+      </div>
+
+      <div class="card-body">
+        <div class="card-title-row">
+          <div>
+            <div class="card-title">Ronald Oliveira</div>
+            <div class="card-subtitle">The Dev · Programador Absoluto</div>
+          </div>
+          <div class="card-role-badge"><i class="fa-solid fa-code" style="font-size:0.7rem;"></i>Builder</div>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <p class="card-desc">
+          Usuário de Linux, artesão de código e arquiteto principal do Rota Segura. 
+          Responsável por toda a estrutura da plataforma, do banco de dados ao pixel final de cada interface.
+        </p>
+
+        <div class="card-stats">
+          <span class="stat-pill"><i class="fa-brands fa-linux"></i>Arch Linux</span>
+          <span class="stat-pill"><i class="fa-solid fa-terminal"></i>Full Stack</span>
+          <span class="stat-pill gold"><i class="fa-solid fa-star"></i>Fundador</span>
+        </div>
+
+        <div class="arcana-text">
+          Aquele que transforma café e commits em sistemas que movem o mundo real.
+        </div>
+      </div>
+
+      <div class="card-banner">
+        <div class="card-banner-name">Ronald A. Oliveira</div>
+        <i class="fa-solid fa-microchip card-banner-icon"></i>
+      </div>
+    </div>
+
+    <!-- THE MENTOR -->
+    <div class="tarot-card fade-up" style="animation-delay:0.1s;">
+      <div class="card-ornament" style="background: linear-gradient(90deg, #e8c97a, #b8860b, #e8c97a);"></div>
+      <div class="card-numeral" style="color:#b8860b; border-color:rgba(184,134,11,0.4);">XXI · THE MENTOR</div>
+
+      <div class="card-art card-art-image">
+        <img src="card2.png" alt="The Mentor — Diego Adriano do Prado" loading="lazy">
+      </div>
+
+      <div class="card-body">
+        <div class="card-title-row">
+          <div>
+            <div class="card-title">Diego A. do Prado</div>
+            <div class="card-subtitle" style="color:#b8860b;">The Mentor · Consultor Pedagógico</div>
+          </div>
+          <div class="card-role-badge"><i class="fa-solid fa-graduation-cap" style="font-size:0.7rem;"></i>Mentor</div>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <p class="card-desc">
+          Professor de robótica, usuário de Mac e a bússola pedagógica do projeto. 
+          Traz a visão educacional que transforma tecnologia em ferramenta real para responsáveis e alunos.
+        </p>
+
+        <div class="card-stats">
+          <span class="stat-pill"><i class="fa-brands fa-apple"></i>macOS</span>
+          <span class="stat-pill"><i class="fa-solid fa-robot"></i>Robótica</span>
+          <span class="stat-pill gold"><i class="fa-solid fa-star"></i>Consultor</span>
+        </div>
+
+        <div class="arcana-text">
+          O sábio que traduz a complexidade do código em clareza para quem mais importa — os alunos.
+        </div>
+      </div>
+
+      <div class="card-banner" style="background: linear-gradient(135deg, #1e1800, #2e2400);">
+        <div class="card-banner-name" style="color:#e8c97a;">Diego A. do Prado</div>
+        <i class="fa-solid fa-chalkboard-teacher card-banner-icon" style="color:rgba(184,134,11,0.6);"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Project lore -->
+  <div class="lore-section fade-up" style="animation-delay:0.2s;">
+    <div class="lore-header">
+      <div class="lore-header-icon"><i class="fa-solid fa-scroll"></i></div>
+      <div>
+        <h2>A Origem do Rota Segura</h2>
+        <p>A quest que deu vida ao sistema</p>
+      </div>
+    </div>
+    <div class="lore-body">
+      <div class="lore-item">
+        <div class="lore-item-num">I</div>
+        <div class="lore-item-text">
+          <h4>O problema que não podia ser ignorado</h4>
+          <p>Incidentes logísticos reais com o transporte escolar de Guaíra expuseram uma ferida grave: responsáveis sem nenhuma visibilidade sobre onde seus filhos estavam. Crianças mais novas pegando ônibus sozinhas, sem que ninguém soubesse se chegaram — ou quando chegariam.</p>
+        </div>
+      </div>
+      <div class="lore-item">
+        <div class="lore-item-num">II</div>
+        <div class="lore-item-text">
+          <h4>A insegurança que virou missão</h4>
+          <p>A ansiedade dos responsáveis diante do desconhecido foi o combustível. Se tecnologia existe para resolver problemas reais, o problema mais real possível é a segurança de uma criança. O Rota Segura nasceu dessa convicção — transformar angústia em tranquilidade, em tempo real.</p>
+        </div>
+      </div>
+      <div class="lore-item">
+        <div class="lore-item-num">III</div>
+        <div class="lore-item-text">
+          <h4>O grimório foi conjurado</h4>
+          <p>Com Supabase como backend, Leaflet para mapas ao vivo e GPS transmitido diretamente pelo celular do motorista — sem app, sem hardware extra — a plataforma foi erguida do zero. Um sistema acessível de qualquer dispositivo, por qualquer responsável, em qualquer lugar.</p>
+        </div>
+      </div>
+      <div class="lore-item">
+        <div class="lore-item-num">IV</div>
+        <div class="lore-item-text">
+          <h4>A guilda que cresce</h4>
+          <p>Painel administrativo completo, portal do aluno, rastreamento em tempo real e alertas — o sistema evolui com cada commit. A missão não termina: enquanto houver uma criança no ônibus, o Rota Segura estará de olho.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech stack -->
+  <div class="tech-section fade-up" style="animation-delay:0.3s;">
+    <div class="tech-eyebrow">Arsenal Tecnológico</div>
+    <div class="tech-pills">
+      <div class="tech-pill"><i class="fa-brands fa-html5" style="color:#e34f26;"></i>HTML5</div>
+      <div class="tech-pill"><i class="fa-brands fa-css3-alt" style="color:#264de4;"></i>CSS3</div>
+      <div class="tech-pill"><i class="fa-brands fa-js" style="color:#f7df1e;"></i>JavaScript</div>
+      <div class="tech-pill"><i class="fa-solid fa-database" style="color:#3dac76;"></i>Supabase</div>
+      <div class="tech-pill"><i class="fa-solid fa-map-location-dot" style="color:#3a7cc7;"></i>Leaflet.js</div>
+      <div class="tech-pill"><i class="fa-brands fa-linux" style="color:#333;"></i>Linux</div>
+      <div class="tech-pill"><i class="fa-brands fa-apple" style="color:#555;"></i>macOS</div>
+      <div class="tech-pill"><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i>GPS Real-time</div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Castlestein Security · Rota Segura · Guaíra — PR
+  </div>
+
+</main>
+
+<script>
+  (() => {
+    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    document.getElementById('btnMenuOpen').addEventListener('click', () => {
+      sidebar.classList.add('open'); overlay.classList.add('open');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open'); overlay.classList.remove('open');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await db.auth.signOut();
+      window.location.href = 'login-user.html';
+    });
+  })();
+</script>
+</body>
+</html>
