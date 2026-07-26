@@ -9,273 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    :root {
-      --bg:     #1e2035;
-      --card:   #252841;
-      --border: #3a3e5e;
-      --mint:   #73ffbb;
-      --sky:    #abd2fa;
-      --amber:  #f9b17a;
-      --red:    #ff6b6b;
-      --text:   #ffffff;
-      --dim:    #a0a3c4;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 20px;
-      gap: 20px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--dim);
-    }
-    .brand svg { color: var(--mint); width: 18px; height: 18px; }
-
-    .card {
-      width: 100%;
-      max-width: 360px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      text-align: center;
-    }
-
-    /* pulsing dot */
-    .status-ring {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      background: rgba(115,255,187,0.06);
-      border: 2px solid rgba(115,255,187,0.2);
-    }
-    .status-ring svg { width: 38px; height: 38px; color: var(--mint); }
-    .status-ring::before {
-      content: '';
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      border: 2px solid var(--mint);
-      opacity: 0;
-      animation: ripple 2.2s ease-out infinite;
-    }
-    .status-ring::after {
-      content: '';
-      position: absolute;
-      inset: -16px;
-      border-radius: 50%;
-      border: 2px solid var(--mint);
-      opacity: 0;
-      animation: ripple 2.2s ease-out infinite;
-      animation-delay: 0.5s;
-    }
-    .status-ring.inactive svg { color: var(--dim); }
-    .status-ring.inactive { border-color: var(--border); background: transparent; }
-    .status-ring.inactive::before,
-    .status-ring.inactive::after { display: none; }
-    .status-ring.error svg { color: var(--red); }
-    .status-ring.error { border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.06); }
-
-    @keyframes ripple {
-      0%   { transform: scale(1);  opacity: 0.5; }
-      100% { transform: scale(1.4); opacity: 0; }
-    }
-
-    .status-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-    }
-    .status-sub {
-      font-size: 0.85rem;
-      color: var(--dim);
-      line-height: 1.55;
-    }
-
-    /* info grid */
-    .info-grid {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .info-cell {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      text-align: left;
-    }
-    .info-cell label {
-      display: block;
-      font-size: 0.65rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--dim);
-      margin-bottom: 4px;
-    }
-    .info-cell span {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .info-cell span.live { color: var(--mint); }
-
-    /* buttons */
-    .btn-start {
-      width: 100%;
-      height: 54px;
-      background: var(--mint);
-      color: #1a1f3a;
-      border: none;
-      border-radius: 14px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.2s, transform 0.15s;
-    }
-    .btn-start:hover  { background: var(--sky); }
-    .btn-start:active { transform: scale(0.98); }
-    .btn-start:disabled { background: var(--border); color: #5a5f82; cursor: not-allowed; }
-
-    .btn-stop {
-      width: 100%;
-      height: 54px;
-      background: rgba(255,107,107,0.1);
-      color: var(--red);
-      border: 1px solid rgba(255,107,107,0.35);
-      border-radius: 14px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.2s;
-    }
-    .btn-stop:hover { background: rgba(255,107,107,0.18); }
-
-    .update-log {
-      width: 100%;
-      font-size: 0.7rem;
-      color: var(--dim);
-      text-align: center;
-    }
-
-    .error-box {
-      width: 100%;
-      max-width: 360px;
-      background: rgba(255,107,107,0.08);
-      border: 1px solid rgba(255,107,107,0.3);
-      border-radius: 14px;
-      padding: 16px 18px;
-      font-size: 0.82rem;
-      color: var(--red);
-      text-align: center;
-      display: none;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="brand">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
-      <circle cx="12" cy="10" r="2.4"/>
-    </svg>
-    Rota Segura
-  </div>
-
-  <div class="card">
-    <div class="status-ring inactive" id="statusRing">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
-        <circle cx="12" cy="10" r="2.4"/>
-      </svg>
-    </div>
-
-    <div>
-      <div class="status-title" id="statusTitle">GPS inativo</div>
-      <div class="status-sub" id="statusSub">Pressione Iniciar Transmissão para enviar sua localização em tempo real.</div>
-    </div>
-
-    <div class="info-grid">
-      <div class="info-cell">
-        <label>Veículo</label>
-        <span id="infoVehicle">—</span>
-      </div>
-      <div class="info-cell">
-        <label>Status</label>
-        <span id="infoStatus">Aguardando</span>
-      </div>
-      <div class="info-cell">
-        <label>Latitude</label>
-        <span id="infoLat" class="live">—</span>
-      </div>
-      <div class="info-cell">
-        <label>Longitude</label>
-        <span id="infoLon" class="live">—</span>
-      </div>
-    </div>
-
-    <button class="btn-start" id="btnStart">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-      </svg>
-      Iniciar Transmissão
-    </button>
-
-    <button class="btn-stop" id="btnStop" style="display:none;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-      </svg>
-      Parar Transmissão
-    </button>
-
-    <div class="update-log" id="updateLog">—</div>
-  </div>
-
-  <div class="error-box" id="errorBox"></div>
-
 <script>
   (() => {
-    const SUPABASE_URL      = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_URL      = "https://siqrztzyikunnxmzvjez.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZWF1a2Z5dmd2a2tyampvZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDcxNzYsImV4cCI6MjA5NDEyMzE3Nn0.k2sD3NT_1yysDyNdQy2e0V4ro4kYBC4G7jjzTS3jtZU";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Lê o bus_id da URL — ex: motorista.html?bus_id=402
     const params = new URLSearchParams(window.location.search);
-    const busId  = params.get('bus_id');
+    const rawBusId = params.get('bus_id');
+    
+    // Garante que o bus_id seja tratado como número se for numérico, evitando incompatibilidade no Supabase
+    const busId = (!isNaN(rawBusId) && rawBusId !== null) ? Number(rawBusId) : rawBusId;
 
     const ring       = document.getElementById('statusRing');
     const titleEl    = document.getElementById('statusTitle');
@@ -289,12 +33,8 @@
     const updateLog  = document.getElementById('updateLog');
     const errorBox   = document.getElementById('errorBox');
 
-    let watchId      = null;
-    let sendInterval = null;
-    let lastLat      = null;
-    let lastLon      = null;
+    let watchId = null;
 
-    // Sem bus_id na URL = link inválido
     if (!busId) {
       showError('Link inválido. Peça ao administrador um novo link de pareamento.');
       btnStart.disabled = true;
@@ -332,28 +72,33 @@
     }
 
     async function sendPosition(lat, lon) {
-      lastLat = lat;
-      lastLon = lon;
-
       infoLat.textContent = lat.toFixed(6);
       infoLon.textContent = lon.toFixed(6);
 
+      // Envio para o Supabase
       const { error } = await db.from('bus_positions').upsert({
-        bus_id:    busId,
-        latitude:  lat,
-        longitude: lon,
+        bus_id:     busId,
+        latitude:   lat,
+        longitude:  lon,
         updated_at: new Date().toISOString()
       }, { onConflict: 'bus_id' });
 
       const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
       if (error) {
-        updateLog.textContent = `[${now}] Falha ao enviar: ${error.message}`;
+        updateLog.textContent = `[${now}] Erro: ${error.message}`;
+        console.error("Supabase Upsert Error:", error);
       } else {
-        updateLog.textContent = `[${now}] Posição enviada com sucesso.`;
+        updateLog.textContent = `[${now}] Sinal de GPS enviado.`;
       }
     }
 
     btnStart.addEventListener('click', () => {
+      // Validação de HTTPS (Obrigatório em dispositivos móveis)
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        showError('O GPS só funciona através de conexões seguras (HTTPS).');
+        return;
+      }
+
       if (!navigator.geolocation) {
         showError('Seu navegador não suporta geolocalização.');
         return;
@@ -361,28 +106,26 @@
 
       btnStart.disabled = true;
 
-      navigator.geolocation.getCurrentPosition(
+      // Inicia captura contínua
+      watchId = navigator.geolocation.watchPosition(
         pos => {
           btnStart.disabled = false;
           setActive(true);
-
-          // Envia imediatamente
           sendPosition(pos.coords.latitude, pos.coords.longitude);
-
-          // Continua assistindo a posição
-          watchId = navigator.geolocation.watchPosition(
-            p => sendPosition(p.coords.latitude, p.coords.longitude),
-            err => {
-              updateLog.textContent = 'Erro de GPS: ' + err.message;
-            },
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-          );
         },
         err => {
           btnStart.disabled = false;
-          showError('Permissão de localização negada. Habilite o GPS nas configurações do navegador e tente novamente.');
+          let errMsg = 'Erro de GPS.';
+          if (err.code === 1) errMsg = 'Permissão de GPS negada pelo celular.';
+          if (err.code === 2) errMsg = 'Sinal de GPS indisponível no momento.';
+          if (err.code === 3) errMsg = 'Tempo limite esgotado ao buscar GPS.';
+          showError(errMsg);
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { 
+          enableHighAccuracy: true, 
+          maximumAge: 0, 
+          timeout: 15000 
+        }
       );
     });
 
@@ -392,11 +135,10 @@
         watchId = null;
       }
 
-      // Zera a posição no banco para que o mapa remova o marcador
       await db.from('bus_positions').upsert({
-        bus_id:    busId,
-        latitude:  0,
-        longitude: 0,
+        bus_id:     busId,
+        latitude:   0,
+        longitude:  0,
         updated_at: new Date().toISOString()
       }, { onConflict: 'bus_id' });
 
