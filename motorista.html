@@ -9,6 +9,326 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <style>
+    :root {
+      --bg:     #1e2035;
+      --card:   #252841;
+      --border: #3a3e5e;
+      --mint:   #73ffbb;
+      --sky:    #abd2fa;
+      --amber:  #f9b17a;
+      --red:    #ff6b6b;
+      --text:   #ffffff;
+      --dim:    #a0a3c4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--dim);
+    }
+    .brand svg { color: var(--mint); width: 18px; height: 18px; }
+
+    .card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    /* status ring */
+    .status-ring {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      background: rgba(115,255,187,0.06);
+      border: 2px solid rgba(115,255,187,0.2);
+      transition: all 0.3s;
+    }
+    .status-ring svg { width: 38px; height: 38px; color: var(--mint); transition: color 0.3s; }
+    .status-ring::before, .status-ring::after {
+      content: '';
+      position: absolute; inset: -8px;
+      border-radius: 50%;
+      border: 2px solid var(--mint);
+      opacity: 0;
+      animation: ripple 2.2s ease-out infinite;
+    }
+    .status-ring::after { inset: -16px; animation-delay: 0.5s; }
+
+    .status-ring.inactive svg         { color: var(--dim); }
+    .status-ring.inactive              { border-color: var(--border); background: transparent; }
+    .status-ring.inactive::before,
+    .status-ring.inactive::after       { display: none; }
+
+    .status-ring.error svg             { color: var(--red); }
+    .status-ring.error                 { border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.06); }
+    .status-ring.error::before,
+    .status-ring.error::after          { display: none; }
+
+    .status-ring.warn svg              { color: var(--amber); }
+    .status-ring.warn                  { border-color: rgba(249,177,122,0.4); background: rgba(249,177,122,0.06); }
+    .status-ring.warn::before,
+    .status-ring.warn::after           { display: none; }
+
+    @keyframes ripple {
+      0%   { transform: scale(1);   opacity: 0.5; }
+      100% { transform: scale(1.4); opacity: 0;   }
+    }
+
+    .status-title { font-size: 1.2rem; font-weight: 800; }
+    .status-sub   { font-size: 0.85rem; color: var(--dim); line-height: 1.55; }
+
+    .info-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-cell {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: left;
+    }
+    .info-cell label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+    .info-cell span       { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .info-cell span.live  { color: var(--mint); }
+
+    /* buttons */
+    .btn-start {
+      width: 100%; height: 54px;
+      background: var(--mint); color: #1a1f3a;
+      border: none; border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 800;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-start:hover   { background: var(--sky); }
+    .btn-start:active  { transform: scale(0.98); }
+    .btn-start:disabled { background: var(--border); color: #5a5f82; cursor: not-allowed; }
+
+    .btn-stop {
+      width: 100%; height: 54px;
+      background: rgba(255,107,107,0.1); color: var(--red);
+      border: 1px solid rgba(255,107,107,0.35);
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 800;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-stop:hover { background: rgba(255,107,107,0.18); }
+
+    .update-log { width: 100%; font-size: 0.7rem; color: var(--dim); text-align: center; }
+
+    /* ── aviso de contexto inseguro ── */
+    .warn-banner {
+      width: 100%; max-width: 360px;
+      background: rgba(249,177,122,0.08);
+      border: 1px solid rgba(249,177,122,0.35);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: none;
+    }
+    .warn-banner h4 {
+      font-size: 0.85rem;
+      color: var(--amber);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .warn-banner p  { font-size: 0.78rem; color: var(--dim); line-height: 1.6; margin-bottom: 10px; }
+    .warn-banner code {
+      display: block;
+      background: rgba(0,0,0,0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.72rem;
+      color: var(--sky);
+      word-break: break-all;
+      margin-bottom: 6px;
+    }
+
+    /* ── modo manual (fallback para testes) ── */
+    .manual-section {
+      width: 100%; max-width: 360px;
+      display: none;
+    }
+    .manual-section summary {
+      font-size: 0.78rem;
+      color: var(--dim);
+      cursor: pointer;
+      padding: 10px 0;
+      list-style: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .manual-section summary::before { content: '▸'; color: var(--amber); }
+    details[open] summary::before   { content: '▾'; }
+
+    .manual-inner {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .manual-inner label { font-size: 0.72rem; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+    .manual-inner input {
+      width: 100%; height: 44px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      padding: 0 14px;
+      outline: none;
+      margin-top: 4px;
+      transition: border-color 0.2s;
+    }
+    .manual-inner input:focus { border-color: var(--amber); }
+    .btn-manual {
+      width: 100%; height: 44px;
+      background: rgba(249,177,122,0.1);
+      border: 1px solid rgba(249,177,122,0.35);
+      color: var(--amber);
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700; font-size: 0.85rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: background 0.2s;
+    }
+    .btn-manual:hover { background: rgba(249,177,122,0.18); }
+  </style>
+</head>
+<body>
+
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+      <circle cx="12" cy="10" r="2.4"/>
+    </svg>
+    Rota Segura
+  </div>
+
+  <!-- ── Card principal ── -->
+  <div class="card">
+    <div class="status-ring inactive" id="statusRing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/>
+        <circle cx="12" cy="10" r="2.4"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="status-title" id="statusTitle">GPS inativo</div>
+      <div class="status-sub"   id="statusSub">Pressione Iniciar Transmissão para enviar sua localização em tempo real.</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-cell"><label>Veículo</label><span id="infoVehicle">—</span></div>
+      <div class="info-cell"><label>Status</label><span id="infoStatus">Aguardando</span></div>
+      <div class="info-cell"><label>Latitude</label><span class="live" id="infoLat">—</span></div>
+      <div class="info-cell"><label>Longitude</label><span class="live" id="infoLon">—</span></div>
+    </div>
+
+    <button class="btn-start" id="btnStart">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      Iniciar Transmissão
+    </button>
+
+    <button class="btn-stop" id="btnStop" style="display:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+      </svg>
+      Parar Transmissão
+    </button>
+
+    <div class="update-log" id="updateLog">—</div>
+  </div>
+
+  <!-- ── Aviso de contexto inseguro (file:// ou http://) ── -->
+  <div class="warn-banner" id="warnBanner">
+    <h4>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      GPS requer HTTPS
+    </h4>
+    <p>
+      O navegador bloqueia o acesso ao GPS em páginas abertas por arquivo local (<code>file://</code>) ou HTTP sem criptografia. Isso é uma restrição de segurança do navegador, não um erro do sistema.
+    </p>
+    <p>Para o GPS funcionar, o arquivo precisa estar em um servidor HTTPS. A forma mais fácil é usar o <b>GitHub Pages</b> — é grátis e automático:</p>
+    <code>Suba os arquivos em um repositório público → Settings → Pages → Branch: main → Save</code>
+    <p style="margin-top:8px;">O link gerado (<code>https://seu-usuario.github.io/rota-segura/motorista.html?bus_id=402</code>) vai funcionar no celular.</p>
+    <p style="margin-top:6px; color: var(--amber); font-size: 0.75rem;">Enquanto isso, use o modo Manual abaixo para testar o envio ao Supabase.</p>
+  </div>
+
+  <!-- ── Modo manual (fallback para file:// ou testes) ── -->
+  <details class="manual-section" id="manualSection">
+    <summary>Envio manual de coordenadas (modo teste)</summary>
+    <div class="manual-inner">
+      <div>
+        <label>Latitude</label>
+        <input type="number" step="any" id="manualLat" placeholder="-24.08657" value="-24.08657">
+      </div>
+      <div>
+        <label>Longitude</label>
+        <input type="number" step="any" id="manualLon" placeholder="-54.24842" value="-54.24842">
+      </div>
+      <button class="btn-manual" id="btnManualSend">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Enviar Coordenadas ao Mapa
+      </button>
+      <div class="update-log" id="manualLog">—</div>
+    </div>
+  </details>
+
 <script>
   (() => {
     const SUPABASE_URL      = "https://siqrztzyikunnxmzvjez.supabase.co";
@@ -16,45 +336,152 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const params = new URLSearchParams(window.location.search);
-    const rawBusId = params.get('bus_id');
-    
-    // Garante que o bus_id seja tratado como número se for numérico, evitando incompatibilidade no Supabase
-    const busId = (!isNaN(rawBusId) && rawBusId !== null) ? Number(rawBusId) : rawBusId;
+    const busId  = params.get('bus_id');
 
-    const ring       = document.getElementById('statusRing');
-    const titleEl    = document.getElementById('statusTitle');
-    const subEl      = document.getElementById('statusSub');
-    const infoVeh    = document.getElementById('infoVehicle');
-    const infoSt     = document.getElementById('infoStatus');
-    const infoLat    = document.getElementById('infoLat');
-    const infoLon    = document.getElementById('infoLon');
-    const btnStart   = document.getElementById('btnStart');
-    const btnStop    = document.getElementById('btnStop');
-    const updateLog  = document.getElementById('updateLog');
-    const errorBox   = document.getElementById('errorBox');
+    const ring      = document.getElementById('statusRing');
+    const titleEl   = document.getElementById('statusTitle');
+    const subEl     = document.getElementById('statusSub');
+    const infoVeh   = document.getElementById('infoVehicle');
+    const infoSt    = document.getElementById('infoStatus');
+    const infoLat   = document.getElementById('infoLat');
+    const infoLon   = document.getElementById('infoLon');
+    const btnStart  = document.getElementById('btnStart');
+    const btnStop   = document.getElementById('btnStop');
+    const updateLog = document.getElementById('updateLog');
+    const warnBanner    = document.getElementById('warnBanner');
+    const manualSection = document.getElementById('manualSection');
 
     let watchId = null;
 
+    /* ── Detecta contexto inseguro ──
+       GPS só funciona em: https:// ou localhost ou 127.0.0.1
+       Se for file:// ou http:// (sem localhost) → mostra aviso e modo manual */
+    const isSecure = location.protocol === 'https:'
+      || location.hostname === 'localhost'
+      || location.hostname === '127.0.0.1';
+
+    if (!isSecure) {
+      warnBanner.style.display    = 'block';
+      manualSection.style.display = 'block';
+      btnStart.disabled           = true;
+
+      ring.className    = 'status-ring warn';
+      titleEl.textContent = 'HTTPS necessário';
+      subEl.textContent   = 'O GPS não funciona em arquivos locais. Veja as instruções abaixo ou use o modo manual para testar.';
+      infoSt.textContent  = 'Bloqueado';
+    }
+
+    /* ── Sem bus_id na URL ── */
     if (!busId) {
-      showError('Link inválido. Peça ao administrador um novo link de pareamento.');
-      btnStart.disabled = true;
+      ring.className      = 'status-ring error';
+      titleEl.textContent = 'Link inválido';
+      subEl.textContent   = 'Peça ao administrador um novo link de pareamento.';
+      btnStart.disabled   = true;
     } else {
       infoVeh.textContent = `Prefixo ${busId}`;
     }
 
-    function showError(msg) {
-      errorBox.textContent  = msg;
-      errorBox.style.display = 'block';
-      ring.className = 'status-ring error';
-      titleEl.textContent = 'Erro';
-      subEl.textContent   = msg;
+    /* ── Envia posição ao Supabase ── */
+    async function sendPosition(lat, lon) {
+      infoLat.textContent = lat.toFixed(6);
+      infoLon.textContent = lon.toFixed(6);
+
+      const { error } = await db.from('bus_positions').upsert({
+        bus_id:     busId,
+        latitude:   lat,
+        longitude:  lon,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'bus_id' });
+
+      const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+      updateLog.textContent = error
+        ? `[${now}] Falha: ${error.message}`
+        : `[${now}] Enviado com sucesso.`;
     }
 
+    /* ── Botão Iniciar (GPS real via HTTPS) ── */
+    btnStart.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        ring.className      = 'status-ring error';
+        titleEl.textContent = 'Não suportado';
+        subEl.textContent   = 'Seu navegador não suporta geolocalização.';
+        return;
+      }
+
+      btnStart.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          btnStart.disabled = false;
+          setActive(true);
+          sendPosition(pos.coords.latitude, pos.coords.longitude);
+
+          watchId = navigator.geolocation.watchPosition(
+            p => sendPosition(p.coords.latitude, p.coords.longitude),
+            err => { updateLog.textContent = 'Erro GPS: ' + err.message; },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+          );
+        },
+        err => {
+          btnStart.disabled = false;
+          ring.className      = 'status-ring error';
+          titleEl.textContent = 'Sem permissão';
+          subEl.textContent   = 'Permissão de localização negada. Verifique as configurações do navegador.';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+
+    /* ── Botão Parar ── */
+    btnStop.addEventListener('click', async () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+
+      await db.from('bus_positions').upsert({
+        bus_id: busId, latitude: 0, longitude: 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'bus_id' });
+
+      setActive(false);
+    });
+
+    /* ── Modo manual ── */
+    document.getElementById('btnManualSend').addEventListener('click', async () => {
+      const lat = parseFloat(document.getElementById('manualLat').value);
+      const lon = parseFloat(document.getElementById('manualLon').value);
+      const log = document.getElementById('manualLog');
+
+      if (isNaN(lat) || isNaN(lon)) { log.textContent = 'Coordenadas inválidas.'; return; }
+      if (!busId) { log.textContent = 'bus_id ausente na URL.'; return; }
+
+      log.textContent = 'Enviando...';
+
+      const { error } = await db.from('bus_positions').upsert({
+        bus_id:     busId,
+        latitude:   lat,
+        longitude:  lon,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'bus_id' });
+
+      const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+      log.textContent = error
+        ? `[${now}] Erro: ${error.message}`
+        : `[${now}] Posição enviada! Verifique o mapa.`;
+
+      // Atualiza o card principal também
+      infoLat.textContent = lat.toFixed(6);
+      infoLon.textContent = lon.toFixed(6);
+      infoSt.textContent  = 'Manual';
+    });
+
+    /* ── helpers ── */
     function setActive(active) {
       if (active) {
         ring.className      = 'status-ring';
         titleEl.textContent = 'Transmitindo';
-        subEl.textContent   = 'Sua localização está sendo enviada ao painel em tempo real.';
+        subEl.textContent   = 'Localização sendo enviada ao painel em tempo real.';
         infoSt.textContent  = 'Transmitindo';
         btnStart.style.display = 'none';
         btnStop.style.display  = 'flex';
@@ -70,80 +497,6 @@
         btnStop.style.display  = 'none';
       }
     }
-
-    async function sendPosition(lat, lon) {
-      infoLat.textContent = lat.toFixed(6);
-      infoLon.textContent = lon.toFixed(6);
-
-      // Envio para o Supabase
-      const { error } = await db.from('bus_positions').upsert({
-        bus_id:     busId,
-        latitude:   lat,
-        longitude:  lon,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'bus_id' });
-
-      const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-      if (error) {
-        updateLog.textContent = `[${now}] Erro: ${error.message}`;
-        console.error("Supabase Upsert Error:", error);
-      } else {
-        updateLog.textContent = `[${now}] Sinal de GPS enviado.`;
-      }
-    }
-
-    btnStart.addEventListener('click', () => {
-      // Validação de HTTPS (Obrigatório em dispositivos móveis)
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        showError('O GPS só funciona através de conexões seguras (HTTPS).');
-        return;
-      }
-
-      if (!navigator.geolocation) {
-        showError('Seu navegador não suporta geolocalização.');
-        return;
-      }
-
-      btnStart.disabled = true;
-
-      // Inicia captura contínua
-      watchId = navigator.geolocation.watchPosition(
-        pos => {
-          btnStart.disabled = false;
-          setActive(true);
-          sendPosition(pos.coords.latitude, pos.coords.longitude);
-        },
-        err => {
-          btnStart.disabled = false;
-          let errMsg = 'Erro de GPS.';
-          if (err.code === 1) errMsg = 'Permissão de GPS negada pelo celular.';
-          if (err.code === 2) errMsg = 'Sinal de GPS indisponível no momento.';
-          if (err.code === 3) errMsg = 'Tempo limite esgotado ao buscar GPS.';
-          showError(errMsg);
-        },
-        { 
-          enableHighAccuracy: true, 
-          maximumAge: 0, 
-          timeout: 15000 
-        }
-      );
-    });
-
-    btnStop.addEventListener('click', async () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-
-      await db.from('bus_positions').upsert({
-        bus_id:     busId,
-        latitude:   0,
-        longitude:  0,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'bus_id' });
-
-      setActive(false);
-    });
 
   })();
 </script>

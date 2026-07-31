@@ -5,179 +5,361 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rota Segura | Dashboard</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* Estilos locais complementares ao ecossistema */
-    .topbar-eyebrow { font-size: 0.7rem; color: #73ffbb; letter-spacing: 1.5px; margin-bottom: 3px; }
-    .topbar h1 { font-size: 1.7rem; }
-    
-    .topbar-sub {
+    .content { --mono: 'JetBrains Mono', 'Courier New', monospace; }
+
+    /* SIDEBAR — idêntica */
+    .sidebar {
+      width: 270px;
+      background: var(--sidebar);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+    .btn-logout {
+      margin-top: auto;
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 4px;
+      gap: 15px;
+      padding: 16px 18px;
+      font-size: 1rem;
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      transition: .25s;
+      font-family: inherit;
     }
-    .topbar-sub p {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--text2);
-    }
-    .topbar-sub .dot { color: var(--text2); opacity: 0.3; }
-    .topbar-clock { font-family: var(--mono); font-size: 0.72rem; color: var(--primary); font-weight: 500; }
+    .btn-logout:hover { background: rgba(255,107,107,0.08); color: #ff8585; transform: translateX(4px); }
+    #menuGestao { display: none !important; }
 
-    .status-badge {
-      display: inline-flex;
+    /* TOPBAR */
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .topbar-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: #73ffbb;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+    .topbar h1 {
+      font-family: var(--mono);
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .topbar-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .meta-chip {
+      display: flex;
       align-items: center;
       gap: 6px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: rgba(115,255,187,0.05);
-      border: 1px solid rgba(115,255,187,0.15);
       font-family: var(--mono);
-      font-size: 0.62rem;
-      font-weight: 700;
-      color: #73ffbb;
+      font-size: 0.67rem;
+      color: #a0a3c4;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: rgba(255,255,255,0.02);
     }
-    .status-badge i { animation: blink 1.6s infinite ease-in-out; }
-
-    @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-
+    .meta-chip .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #73ffbb;
+      box-shadow: 0 0 5px #73ffbb;
+      animation: blink 2s infinite;
+    }
     .profile {
-      display: flex; align-items: center; gap: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       padding: 10px 16px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 6px;
       background: rgba(255,255,255,0.02);
       flex-shrink: 0;
     }
     .profile-text { text-align: right; display: flex; flex-direction: column; gap: 2px; }
-    .profile-text span { font-size: 0.85rem; color: #fff; font-weight: 600; }
-    .profile-text small { font-size: 0.7rem; color: #73ffbb; font-family: var(--mono); }
+    .profile-text span { font-family: var(--mono); font-size: 0.8rem; color: #fff; }
+    .profile-text small { font-family: var(--mono); font-size: 0.66rem; color: #73ffbb; letter-spacing: 1px; }
     .avatar {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: rgba(115,255,187,0.07);
+      width: 36px; height: 36px; border-radius: 5px;
+      background: rgba(115,255,187,0.06);
       border: 1px solid rgba(115,255,187,0.2);
       display: flex; align-items: center; justify-content: center;
-      color: #73ffbb;
+      color: #73ffbb; font-size: 0.9rem;
     }
     .avatar::after { content: '\f007'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 
-    /* Grid de Indicadores */
+    /* SECTION LABEL */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: #5a5f82;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-label::before { content: '//'; color: #73ffbb; font-weight: 700; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* STAT CARDS */
     .cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 22px;
     }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      transition: border-color 0.2s, background 0.2s;
+      border-radius: 6px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
     }
-    .card:hover { border-color: rgba(171, 210, 250, 0.2); background: var(--card-hover); }
-    .card-icon {
-      width: 44px; height: 44px; border-radius: 8px;
-      background: rgba(171,210,250,0.04);
-      border: 1px solid rgba(171,210,250,0.15);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--primary); font-size: 1rem; flex-shrink: 0;
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #abd2fa, #73ffbb);
+      opacity: 0.45;
     }
-    .card span { font-family: var(--mono); font-size: 0.68rem; color: var(--text2); letter-spacing: 0.5px; }
-    .card h2 { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: #fff; margin: 2px 0; }
-    .card p { font-family: var(--mono); font-size: 0.68rem; color: #73ffbb; }
-    .alert-card p { color: #ff6b6b; }
+    .card:hover { border-color: rgba(115,255,187,0.3); }
+    .card-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      color: #5a5f82;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .card-value {
+      font-family: var(--mono);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .card-value.loading { color: #3a3e5e; }
+    .card-status {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: #5a5f82;
+      letter-spacing: 1px;
+    }
+    .card-status.ok   { color: #73ffbb; }
+    .card-status.warn { color: #f0b86e; }
+    .card-icon-bg {
+      position: absolute;
+      bottom: -10px; right: -6px;
+      font-size: 3.6rem;
+      color: rgba(255,255,255,0.025);
+    }
+    .alert-card::before { background: linear-gradient(90deg, #ff6b6b, #f0b86e); }
 
-    /* Painel Lobo Frontal - Estrutura de Fluxo */
+    /* LOBE CONTAINER */
     .lobe-container {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px;
-      min-height: 380px;
+      border-radius: 6px;
+      min-height: 400px;
       position: relative;
       overflow: hidden;
-      display: flex;
-      align-items: center;
     }
-    .lobe-status {
-      position: absolute; top: 16px; right: 16px;
-      display: flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: 4px;
-      background: rgba(115,255,187,0.05); border: 1px solid rgba(115,255,187,0.2);
-      color: #73ffbb; font-family: var(--mono); font-size: 0.65rem; font-weight: 700; z-index: 3;
+    .lobe-container::before,
+    .lobe-container::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-color: rgba(115,255,187,0.3);
+      border-style: solid;
+      pointer-events: none;
+      z-index: 4;
     }
-    .lobe-status i { animation: blink 1.6s infinite ease-in-out; }
-    
-    .lobe-header { position: absolute; top: 24px; left: 24px; z-index: 3; max-width: 340px; }
-    .lobe-header h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .lobe-header p { color: var(--text2); font-size: 0.8rem; line-height: 1.5; margin-bottom: 12px; }
-    
-    .lobe-meta { display: flex; align-items: center; gap: 8px; }
-    .lobe-meta-item { font-family: var(--mono); font-size: 0.65rem; color: var(--text2); opacity: 0.6; }
-    .lobe-meta-sep { color: var(--text2); opacity: 0.2; font-size: 0.7rem; }
+    .lobe-container::before { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+    .lobe-container::after  { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
 
-    .signal-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-    .signal-line { fill: none; stroke: rgba(171,210,250,0.06); stroke-width: 1.5; }
+    .lobe-status {
+      position: absolute;
+      top: 20px; right: 20px;
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 12px;
+      border-radius: 3px;
+      background: rgba(115,255,187,0.06);
+      border: 1px solid rgba(115,255,187,0.2);
+      color: #73ffbb;
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      z-index: 3;
+    }
+    .lobe-status i { animation: boltFlash 1.6s infinite ease-in-out; }
+
+    .lobe-header {
+      position: absolute;
+      top: 22px; left: 24px;
+      z-index: 3;
+      max-width: 320px;
+    }
+    .lobe-header h2 {
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .lobe-header p {
+      font-family: var(--mono);
+      color: #4e5275;
+      font-size: 0.7rem;
+      line-height: 1.75;
+    }
+
+    .signal-svg {
+      position: absolute;
+      inset: 0; width: 100%; height: 100%;
+      z-index: 1; pointer-events: none;
+    }
+    .signal-line { fill: none; stroke: rgba(171,210,250,0.1); stroke-width: 1.5; }
     .signal-pulse {
-      fill: none; stroke: #73ffbb; stroke-width: 2; stroke-linecap: round;
-      stroke-dasharray: 20 600; filter: drop-shadow(0 0 3px rgba(115,255,187,0.6));
+      fill: none;
+      stroke: #73ffbb;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 16 600;
+      filter: drop-shadow(0 0 4px rgba(115,255,187,0.8));
       animation: signalFlow 4s linear infinite;
     }
-    @keyframes signalFlow { to { stroke-dashoffset: -620; } }
 
-    .brain-core { position: absolute; top: 58%; left: 22%; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center; }
+    .brain-core {
+      position: absolute;
+      top: 60%; left: 20%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+    }
     .lobe-core-wrap {
-      position: relative; width: 90px; height: 90px;
-      background: rgba(171,210,250,0.02); border-radius: 50%;
+      position: relative;
+      width: 120px; height: 120px;
+      background: rgba(171,210,250,0.03);
+      border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
     }
-    .lobe-core-wrap::before {
-      content: ''; position: absolute; border: 1.5px solid rgba(115,255,187,0.2); border-radius: 50%;
-      width: 100%; height: 100%; animation: execPulse 2s infinite ease-out;
+    .lobe-core-wrap::before,
+    .lobe-core-wrap::after {
+      content: '';
+      position: absolute;
+      border: 1px solid rgba(171,210,250,0.15);
+      border-radius: 50%;
+      width: 100%; height: 100%;
+      opacity: 0;
+      animation: execPulse 2.4s infinite ease-out;
     }
-    @keyframes execPulse { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
-    
+    .lobe-core-wrap::after { animation-delay: 1.2s; }
+
     .lobe-core {
-      font-size: 1.8rem; background: linear-gradient(135deg, #abd2fa, #73ffbb);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      position: relative;
+      font-size: 2.6rem;
+      z-index: 2;
+      background: linear-gradient(135deg, #abd2fa, #73ffbb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: coreGlow 3s infinite ease-in-out;
     }
-    .brain-label { margin-top: 10px; font-family: var(--mono); font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; color: #73ffbb; }
+    .lobe-core::after {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+      border: 1px dashed rgba(115,255,187,0.25);
+      animation: spinExec 8s linear infinite;
+    }
 
-    .nodes-container { position: absolute; right: 24px; top: 55%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 2; }
+    .brain-label {
+      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #73ffbb;
+    }
+
+    .nodes-container {
+      position: absolute;
+      right: 7%; top: 55%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column;
+      gap: 18px; z-index: 2;
+    }
     .signal-node {
-      display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px;
-      background: #11121d; border: 1px solid var(--border); color: #fff; font-size: 0.78rem;
-      font-weight: 600; min-width: 180px; transition: border-color 0.2s, transform 0.2s; text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 18px;
+      border-radius: 3px;
+      background: rgba(171,210,250,0.02);
+      border: 1px solid var(--border);
+      color: #a0a3c4;
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      white-space: nowrap;
+      min-width: 155px;
+      transition: 0.2s;
+      cursor: default;
     }
-    .signal-node:hover { border-color: rgba(115,255,187,0.3); transform: translateX(-2px); }
-    .signal-node i { color: #73ffbb; font-size: 0.8rem; width: 14px; text-align: center; }
-    .node-badge {
-      margin-left: auto; font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
-      padding: 1px 5px; border-radius: 4px; background: rgba(115,255,187,0.08); color: #73ffbb; border: 1px solid rgba(115,255,187,0.15);
-    }
-    .node-badge.warn { background: rgba(255,180,50,0.08); color: #f5be5e; border-color: rgba(255,180,50,0.2); }
-    .node-badge.danger { background: rgba(255,107,107,0.08); color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
+    .signal-node::before { content: '▸'; color: rgba(115,255,187,0.2); font-size: 0.55rem; transition: 0.2s; }
+    .signal-node:hover { border-color: rgba(115,255,187,0.3); color: #fff; background: rgba(115,255,187,0.03); }
+    .signal-node:hover::before { color: #73ffbb; }
+    .signal-node i { color: #abd2fa; font-size: 0.78rem; width: 14px; text-align: center; }
 
-    @media (max-width: 1200px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+    /* ANIMATIONS */
+    @keyframes signalFlow { to { stroke-dashoffset: -620; } }
+    @keyframes execPulse {
+      0%   { transform: scale(0.9); opacity: 0; }
+      15%  { opacity: 0.3; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    @keyframes coreGlow {
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(171,210,250,0.3)); }
+      50%       { filter: drop-shadow(0 0 20px rgba(115,255,187,0.5)); }
+    }
+    @keyframes spinExec { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes boltFlash { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    @media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 900px) {
       .signal-svg, .nodes-container { display: none; }
-      .lobe-container { flex-direction: column; padding: 30px 16px; min-height: auto; justify-content: center; }
-      .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 24px; text-align: center; }
-      .lobe-meta { justify-content: center; }
-      .brain-core { position: relative; top: auto; left: auto; transform: none; }
+      .lobe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: auto; padding: 40px 20px; }
+      .lobe-header { position: relative; top: auto; left: auto; max-width: none; margin-bottom: 30px; }
+      .brain-core  { position: relative; top: auto; left: auto; transform: none; }
     }
-    @media (max-width: 800px) { .sidebar { display: none; } .cards { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -187,98 +369,98 @@
   <aside class="sidebar">
     <div class="logo"><span>Rota Segura</span></div>
     <nav class="menu">
-      <a href="dashboard.html" class="active"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
-      <a href="usuarios.html" id="menuGestao" style="display: none;"><i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span></a>
-      <a href="aulas.html" id="menuAulas" style="display: none;"><i class="fa-solid fa-book-open"></i><span>Gestão de Aulas</span></a>
-      <a href="onibus.html"><i class="fa-solid fa-bus"></i><span>Ônibus</span></a>
-      <a href="rotas.html"><i class="fa-solid fa-route"></i><span>Rotas</span></a>
-      <a href="alertas.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span></a>
-      <a href="mapa.html"><i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span></a>
-      <a href="alunoadmin.html"><i class="fa-solid fa-chalkboard-user"></i><span>Aulas Aluno</span></a>
-      <button id="logoutBtn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span></button>
+      <a href="dashboard.html" class="active">
+        <i class="fa-solid fa-chart-line"></i><span>Analytics</span>
+      </a>
+      <a href="usuarios.html" id="menuGestao">
+        <i class="fa-solid fa-user-graduate"></i><span>Gestão de Usuários</span>
+      </a>
+      <a href="onibus.html">
+        <i class="fa-solid fa-bus"></i><span>Ônibus</span>
+      </a>
+      <a href="rotas.html">
+        <i class="fa-solid fa-route"></i><span>Rotas</span>
+      </a>
+      <a href="alertas.html">
+        <i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span>
+      </a>
+      <a href="mapa.html">
+        <i class="fa-solid fa-map-location-dot"></i><span>Mapa de Guaíra</span>
+      </a>
+      <button id="logoutBtn" class="btn-logout">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair do Sistema</span>
+      </button>
     </nav>
     <div class="sidebar-footer">Desenvolvido por <b>CastlesteinSecurity</b></div>
   </aside>
 
   <main class="content">
+
     <header class="topbar">
       <div>
         <div class="topbar-eyebrow">root@rota-segura:~/analytics$</div>
         <h1>Analytics</h1>
-        <div class="topbar-sub">
-          <p>visão_geral_do_sistema</p>
-          <span class="dot">·</span>
-          <span class="topbar-clock" id="clock">--:--:--</span>
-          <span class="dot">·</span>
-          <p>build 2.4.1</p>
+        <div class="topbar-meta">
+          <span class="meta-chip"><span class="dot"></span>sys_online</span>
+          <span class="meta-chip"><i class="fa-regular fa-clock" style="font-size:0.6rem"></i>&nbsp;<span id="clockDisplay">--:--:--</span></span>
+          <span class="meta-chip"><i class="fa-solid fa-database" style="font-size:0.6rem"></i>&nbsp;supabase::ok</span>
         </div>
       </div>
-
       <div class="profile">
         <div class="profile-text">
-          <span id="Username">Carregando...</span>
-          <small id="UserRole">Verificando...</small>
+          <span id="Username">carregando...</span>
+          <small id="UserRole">verificando...</small>
         </div>
         <div class="avatar"></div>
       </div>
     </header>
 
+    <p class="section-label">system readout</p>
+
     <section class="cards">
       <div class="card">
-        <div class="card-icon"><i class="fa-solid fa-user-group"></i></div>
-        <div>
-          <span>total_alunos</span>
-          <h2 id="totalAlunosCard">...</h2>
-          <p>↑ sincronizado</p>
-        </div>
+        <div class="card-eyebrow">total_alunos</div>
+        <div class="card-value loading" id="totalAlunosCard">···</div>
+        <div class="card-status ok" id="alunosStatus">sync: ok</div>
+        <i class="fa-solid fa-user-group card-icon-bg"></i>
       </div>
-
       <div class="card">
-        <div class="card-icon"><i class="fa-solid fa-id-card"></i></div>
-        <div>
-          <span>motoristas_ativos</span>
-          <h2 id="totalMotoristasCard">...</h2>
-          <p>↑ sincronizado</p>
-        </div>
+        <div class="card-eyebrow">motoristas_ativos</div>
+        <div class="card-value loading" id="totalMotoristasCard">···</div>
+        <div class="card-status ok" id="motoristasStatus">sync: ok</div>
+        <i class="fa-solid fa-id-card card-icon-bg"></i>
       </div>
-
-      <div class="card" style="cursor: pointer;" onclick="window.location.href='aulas.html'">
-        <div class="card-icon" style="color: #ffc673;"><i class="fa-solid fa-folder-tree"></i></div>
-        <div>
-          <span>turmas_ativas</span>
-          <h2 id="totalTurmasCard">0</h2>
-          <p style="color: #ffc673;">↑ gerenciável</p>
-        </div>
+      <div class="card">
+        <div class="card-eyebrow">rotas_em_curso</div>
+        <div class="card-value">--</div>
+        <div class="card-status warn">awaiting_data</div>
+        <i class="fa-solid fa-bus card-icon-bg"></i>
       </div>
-
-      <div class="card alert-card" style="cursor: pointer;" onclick="window.location.href='alertas.html'">
-        <div class="card-icon" id="alertCardIcon" style="color: var(--primary);"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <span>sys.alertas</span>
-          <h2 id="totalAlertasCard">0</h2>
-          <p id="alertCardStatusText" style="color: var(--text2);">nenhuma ocorrência</p>
-        </div>
+      <div class="card alert-card">
+        <div class="card-eyebrow">alertas_ativos</div>
+        <div class="card-value">--</div>
+        <div class="card-status">no_incidents</div>
+        <i class="fa-solid fa-triangle-exclamation card-icon-bg"></i>
       </div>
     </section>
+
+    <p class="section-label">neural exec module</p>
 
     <section class="lobe-container">
       <div class="lobe-status"><i class="fa-solid fa-bolt"></i> EXECUTANDO</div>
 
       <div class="lobe-header">
-        <h2>Lobo Frontal Operacional</h2>
-        <p>Núcleo de execução assíncrono. Os sinais de telemetria e posicionamento global são processados em tempo real.</p>
-        <div class="lobe-meta">
-          <span class="lobe-meta-item">uptime <span id="uptime">--:--:--</span></span>
-          <span class="lobe-meta-sep">|</span>
-          <span class="lobe-meta-item">kernel 6.8.0-lts</span>
-          <span class="lobe-meta-sep">|</span>
-          <span class="lobe-meta-item">pid 0x3a2f</span>
-        </div>
+        <h2>// lobo_frontal.exec</h2>
+        <p>
+          # Núcleo de execução da frota.<br>
+          # Sinais de comando despachados em tempo real<br>
+          # para os módulos adjacentes via bus interno.
+        </p>
       </div>
 
       <svg class="signal-svg" viewBox="0 0 1000 400" preserveAspectRatio="none">
         <defs>
-          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <marker id="signalArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 Z" fill="rgba(115,255,187,0.3)"/>
           </marker>
         </defs>
@@ -288,47 +470,39 @@
         <path class="signal-line" d="M200,240 C400,310 600,300 800,295" marker-end="url(#signalArrow)"/>
 
         <path class="signal-pulse" d="M200,240 C400,160 600,140 800,145" style="animation-delay:0s"/>
-        <path class="signal-pulse" d="M200,240 C400,210 600,195 800,195" style="animation-delay:0.6s"/>
-        <path class="signal-pulse" d="M200,240 C400,260 600,250 800,245" style="animation-delay:1.2s"/>
-        <path class="signal-pulse" d="M200,240 C400,310 600,300 800,295" style="animation-delay:1.8s"/>
+        <path class="signal-pulse" d="M200,240 C400,210 600,195 800,195" style="animation-delay:0.7s"/>
+        <path class="signal-pulse" d="M200,240 C400,260 600,250 800,245" style="animation-delay:1.4s"/>
+        <path class="signal-pulse" d="M200,240 C400,310 600,300 800,295" style="animation-delay:2.1s"/>
       </svg>
 
       <div class="brain-core">
-        <div class="lobe-core-wrap"><i class="fa-solid fa-brain lobe-core"></i></div>
-        <span class="brain-label">Lobo Frontal</span>
+        <div class="lobe-core-wrap">
+          <i class="fa-solid fa-brain lobe-core"></i>
+        </div>
+        <span class="brain-label">lobo_frontal</span>
       </div>
 
       <div class="nodes-container">
-        <a href="onibus.html" class="signal-node"><i class="fa-solid fa-bus"></i><span>Ônibus</span><span class="node-badge">ONLINE</span></a>
-        <a href="rotas.html" class="signal-node"><i class="fa-solid fa-route"></i><span>Rotas</span><span class="node-badge">ONLINE</span></a>
-        <a href="alertas.html" class="signal-node"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span><span class="node-badge" id="lobeAlertsBadge">STANDBY</span></a>
-        <a href="usuarios.html" class="signal-node"><i class="fa-solid fa-user-group"></i><span>Usuários</span><span class="node-badge">ONLINE</span></a>
+        <div class="signal-node"><i class="fa-solid fa-bus"></i><span>onibus.mod</span></div>
+        <div class="signal-node"><i class="fa-solid fa-route"></i><span>rotas.mod</span></div>
+        <div class="signal-node"><i class="fa-solid fa-triangle-exclamation"></i><span>alertas.mod</span></div>
+        <div class="signal-node"><i class="fa-solid fa-user-group"></i><span>usuarios.mod</span></div>
       </div>
     </section>
+
   </main>
 </div>
 
 <script>
   (() => {
-    function tick() {
-      const el = document.getElementById('clock');
-      if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-    }
-    tick(); setInterval(tick, 1000);
-
-    const startTime = Date.now();
-    setInterval(() => {
-      const s   = Math.floor((Date.now() - startTime) / 1000);
-      const hh  = String(Math.floor(s / 3600)).padStart(2,'0');
-      const mm  = String(Math.floor((s % 3600) / 60)).padStart(2,'0');
-      const ss  = String(s % 60).padStart(2,'0');
-      const el  = document.getElementById('uptime');
-      if (el) el.textContent = `${hh}:${mm}:${ss}`;
-    }, 1000);
-
     const SUPABASE_URL      = "https://siqrztzyikunnxmzvjez.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpcXJ6dHp5aWt1bm54bXp2amV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjU2NDAsImV4cCI6MjA5NzkwMTY0MH0.3VprUH7MqrZol5dzaPUL_B1Hrd-hlhxUqH-xLaX-c34";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // live clock
+    const clockEl = document.getElementById('clockDisplay');
+    const tick = () => { if (clockEl) clockEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false }); };
+    tick(); setInterval(tick, 1000);
 
     async function checkSession() {
       try {
@@ -336,111 +510,51 @@
         if (authError || !user) { window.location.href = "login.html"; return; }
 
         const { data: profile } = await db
-          .from('profiles')
-          .select('display_name, role')
-          .eq('id', user.id)
-          .maybeSingle();
+          .from('profiles').select('display_name, role').eq('id', user.id).maybeSingle();
 
         const userRole = (profile?.role || 'aluno').toLowerCase();
-
-        if (['aluno','responsavel','motorista'].includes(userRole)) {
+        if (['aluno', 'responsavel', 'motorista'].includes(userRole)) {
           window.location.href = "login-user.html"; return;
         }
 
-        document.getElementById('Username').innerText = profile?.display_name || user.email.split('@')[0];
-
-        const roleLabels = {
-          administrador: 'Administrador',
-          motorista:     'Motorista',
-          aluno:         'Aluno',
-          responsavel:   'Responsável'
-        };
+        const displayName = profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0];
+        document.getElementById('Username').innerText = displayName;
+        const roleLabels = { administrador: 'Administrador', motorista: 'Motorista', aluno: 'Aluno', responsavel: 'Responsável' };
         document.getElementById('UserRole').innerText = roleLabels[userRole] || 'Usuário';
 
         if (userRole === 'administrador') {
           const menuG = document.getElementById('menuGestao');
-          if (menuG) menuG.style.display = 'flex';
-          
-          const menuA = document.getElementById('menuAulas');
-          if (menuA) menuA.style.display = 'flex';
+          if (menuG) menuG.style.setProperty('display', 'block', 'important');
         }
-
         fetchAnalytics();
       } catch (err) {
-        console.error("Erro crítico na sessão:", err);
-        document.getElementById('Username').innerText = "Erro local";
+        console.error("Erro crítico:", err);
+        document.getElementById('Username').innerText = "err::load_failed";
       }
     }
 
     async function fetchAnalytics() {
-      // 1. Contagens do Banco Relacional
+      const set = (valId, statusId, count, err) => {
+        const v = document.getElementById(valId);
+        const s = document.getElementById(statusId);
+        if (v) { v.textContent = err ? '0' : count; v.classList.remove('loading'); }
+        if (s) { s.textContent = err ? 'sync: error' : 'sync: ok'; s.className = 'card-status ' + (err ? 'warn' : 'ok'); }
+      };
       try {
-        const { count: countAlunos, error: errAlunos } = await db
-          .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'aluno');
-        document.getElementById('totalAlunosCard').innerText = (!errAlunos && countAlunos !== null) ? countAlunos : '0';
-
-        const { count: countMotoristas, error: errMotoristas } = await db
-          .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'motorista');
-        document.getElementById('totalMotoristasCard').innerText = (!errMotoristas && countMotoristas !== null) ? countMotoristas : '0';
-      } catch (err) {
-        document.getElementById('totalAlunosCard').innerText = '0';
-        document.getElementById('totalMotoristasCard').innerText = '0';
-      }
-
-      // 2. Mapeamento Cache de Turmas Criadas
-      try {
-        const localTurmas = JSON.parse(localStorage.getItem('rs_turmas') || '[]');
-        const totalTurmasCard = document.getElementById('totalTurmasCard');
-        if (totalTurmasCard) totalTurmasCard.innerText = localTurmas.length;
-      } catch (e) {
-        console.error("Falha ao computar turmas ativas localmente:", e);
-      }
-
-      // 3. Sincronização Dinâmica do Mapeamento de Alertas
-      try {
-        const saved = localStorage.getItem('rota_segura_incidentes');
-        let totalAlertas = 0;
-        let possuiCritico = false;
-
-        if (saved) {
-          const incidentes = JSON.parse(saved);
-          totalAlertas = incidentes.length;
-          possuiCritico = incidentes.some(i => i.type === 'critico');
-        }
-
-        const totalAlertasCard = document.getElementById('totalAlertasCard');
-        const alertCardStatusText = document.getElementById('alertCardStatusText');
-        const alertCardIcon = document.getElementById('alertCardIcon');
-        const lobeAlertsBadge = document.getElementById('lobeAlertsBadge');
-
-        if (totalAlertasCard) totalAlertasCard.innerText = totalAlertas;
-
-        if (totalAlertas > 0) {
-          if (alertCardStatusText) alertCardStatusText.innerText = `↑ ${totalAlertas} ativos`;
-          if (alertCardStatusText) alertCardStatusText.style.color = '#ff6b6b';
-          if (alertCardIcon) alertCardIcon.style.color = '#ff6b6b';
-          
-          if (lobeAlertsBadge) {
-            lobeAlertsBadge.innerText = possuiCritico ? 'CRÍTICO' : 'AVISO';
-            lobeAlertsBadge.className = possuiCritico ? 'node-badge danger' : 'node-badge warn';
-          }
-        } else {
-          if (alertCardStatusText) alertCardStatusText.innerText = 'nenhuma ocorrência';
-          if (alertCardStatusText) alertCardStatusText.style.color = 'var(--text2)';
-          if (alertCardIcon) alertCardIcon.style.color = 'var(--primary)';
-          
-          if (lobeAlertsBadge) {
-            lobeAlertsBadge.innerText = 'STANDBY';
-            lobeAlertsBadge.className = 'node-badge warn';
-          }
-        }
-      } catch (e) {
-        console.error("Falha ao mapear contagem local de alertas:", e);
+        const { count: ca, error: ea } = await db.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'aluno');
+        set('totalAlunosCard', 'alunosStatus', ca, ea);
+        const { count: cm, error: em } = await db.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'motorista');
+        set('totalMotoristasCard', 'motoristasStatus', cm, em);
+      } catch {
+        set('totalAlunosCard', 'alunosStatus', 0, true);
+        set('totalMotoristasCard', 'motoristasStatus', 0, true);
       }
     }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await db.auth.signOut(); window.location.href = "login.html";
+      const { error } = await db.auth.signOut();
+      if (!error) window.location.href = "login.html";
+      else alert("Erro ao sair: " + error.message);
     });
 
     document.addEventListener('DOMContentLoaded', checkSession);

@@ -3,45 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>auth-gateway :: login</title>
+    <title>auth-gateway :: root</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
-            --bg-page: #1e2035;
-            --bg-titlebar: #1a1c30;
-            --bg-left: #252841;
-            --bg-right: #1c1e36;
-            --bg-input: #2d3154;
-            --bg-input-focus: #333866;
-            --border: #3a3e5e;
-            --border-bright: #4a4f7a;
-            --accent: #d9fced;
-            --accent-dim: #7d96b0;
-            --accent-glow: rgba(217, 252, 237, 0.22);
-            --text: #ffffff;
-            --text-dim: #a0a3c4;
-            --highlight: #abd2fa;
-            --red: #ff6b6b;
-            --font: 'JetBrains Mono', 'Courier New', monospace;
+            --bg-page:       #0f1117;
+            --bg-titlebar:   #0c0e16;
+            --bg-left:       #13151f;
+            --bg-right:      #0f1117;
+            --bg-input:      #1a1d2e;
+            --bg-input-focus:#1f2338;
+            --border:        #252840;
+            --border-bright: #323659;
+            --accent:        #d9fced;
+            --accent-dim:    #5a7a6a;
+            --accent-glow:   rgba(217,252,237,0.12);
+            --accent-glow-2: rgba(217,252,237,0.06);
+            --text:          #e8ecf0;
+            --text-dim:      #8a8fb0;
+            --highlight:     #abd2fa;
+            --red:           #ff6b6b;
+            --font:          'JetBrains Mono', 'Courier New', monospace;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html, body { height: 100%; }
 
         body {
             font-family: var(--font);
             background: var(--bg-page);
-            background-image:
-                linear-gradient(rgba(217, 252, 237, 0.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(217, 252, 237, 0.035) 1px, transparent 1px);
-            background-size: 38px 38px;
+            /* subtle dot-grid */
+            background-image: radial-gradient(circle, rgba(217,252,237,0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
             color: var(--text);
             display: flex;
             align-items: center;
@@ -49,134 +47,178 @@
             overflow: hidden;
         }
 
-        a { color: inherit; }
+        /* ambient glow blobs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(217,252,237,0.04) 0%, transparent 70%);
+            top: -200px; right: -200px;
+        }
+        body::after {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(171,210,250,0.04) 0%, transparent 70%);
+            bottom: -180px; left: -180px;
+        }
 
+        a { color: inherit; text-decoration: none; }
+
+        /* ── Main window ── */
         .terminal-window {
             position: relative;
+            z-index: 1;
             width: 92vw;
-            max-width: 1120px;
-            height: 84vh;
-            max-height: 640px;
-            border-radius: 8px;
+            max-width: 1060px;
+            height: 82vh;
+            max-height: 620px;
+            border-radius: 10px;
             border: 1px solid var(--border-bright);
             overflow: hidden;
-            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+            box-shadow:
+                0 0 0 1px rgba(217,252,237,0.04),
+                0 32px 80px rgba(0,0,0,0.7),
+                0 0 80px rgba(217,252,237,0.04) inset;
             display: flex;
             flex-direction: column;
         }
 
+        /* scanlines */
         .terminal-window::after {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: repeating-linear-gradient(
                 to bottom,
-                transparent 0px,
-                transparent 2px,
-                rgba(217, 252, 237, 0.02) 3px
+                transparent 0px, transparent 3px,
+                rgba(217,252,237,0.013) 4px
             );
-            pointer-events: none;
-            z-index: 5;
+            pointer-events: none; z-index: 10;
         }
 
-        /* ---------- title bar ---------- */
-
+        /* ── Title bar ── */
         .title-bar {
             display: flex;
             align-items: center;
-            gap: 16px;
-            height: 38px;
-            padding: 0 16px;
+            gap: 14px;
+            height: 36px;
+            padding: 0 14px;
             background: var(--bg-titlebar);
             border-bottom: 1px solid var(--border);
-            font-size: 0.76rem;
+            font-size: 0.7rem;
             color: var(--text-dim);
             flex-shrink: 0;
+            z-index: 6;
         }
 
-        .tb-buttons { display: flex; gap: 8px; }
-
+        .tb-buttons { display: flex; gap: 7px; }
         .tb-dot {
-            width: 11px;
-            height: 11px;
+            width: 10px; height: 10px;
             border-radius: 50%;
-            border: 1px solid var(--border-bright);
             background: transparent;
         }
-        .tb-dot.tb-close { border-color: #5a3434; }
-        .tb-dot.tb-min { border-color: #5a5430; }
-        .tb-dot.tb-max { border-color: var(--accent-dim); }
+        .tb-dot.tb-close { background: #ff5f57; box-shadow: 0 0 4px rgba(255,95,87,0.5); }
+        .tb-dot.tb-min   { background: #febc2e; box-shadow: 0 0 4px rgba(254,188,46,0.5); }
+        .tb-dot.tb-max   { background: #28c840; box-shadow: 0 0 4px rgba(40,200,64,0.5); }
 
-        .title-bar-text { flex: 1; text-align: center; letter-spacing: 0.5px; }
-
-        .title-bar-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--accent);
-            font-weight: 500;
-            flex-shrink: 0;
+        .title-bar-text {
+            flex: 1; text-align: center; letter-spacing: 0.5px;
+            font-size: 0.68rem;
         }
 
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
+        .title-bar-right {
+            display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+        }
+        .tb-clock { font-size: 0.67rem; color: var(--text-dim); }
+        .tb-status {
+            display: flex; align-items: center; gap: 5px;
+            color: var(--accent); font-size: 0.67rem; font-weight: 700;
+        }
+        .tb-status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
             background: var(--accent);
             box-shadow: 0 0 6px var(--accent);
             animation: pulse 2s ease-in-out infinite;
         }
 
-        /* ---------- layout ---------- */
-
+        /* ── Layout ── */
         .wrapper { display: flex; flex: 1; min-height: 0; }
 
+        /* ── Left panel ── */
         .panel-left {
             flex: 1;
             background: var(--bg-left);
-            padding: 48px 56px;
+            padding: 44px 52px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow-y: auto;
+            position: relative;
         }
 
-        .prompt-path { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
-        .prompt-path span { color: var(--accent); }
+        /* corner decorators */
+        .panel-left::before {
+            content: '';
+            position: absolute;
+            top: 14px; left: 14px;
+            width: 14px; height: 14px;
+            border-top: 1px solid rgba(217,252,237,0.2);
+            border-left: 1px solid rgba(217,252,237,0.2);
+        }
+        .panel-left::after {
+            content: '';
+            position: absolute;
+            bottom: 14px; right: 14px;
+            width: 14px; height: 14px;
+            border-bottom: 1px solid rgba(217,252,237,0.2);
+            border-right: 1px solid rgba(217,252,237,0.2);
+        }
+
+        .prompt-path {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .prompt-path .pp-dir  { color: var(--highlight); }
+        .prompt-path .pp-sep  { color: var(--accent-dim); }
+        .prompt-path .pp-file { color: var(--accent); }
 
         .panel-left h1 {
-            font-size: 2.1rem;
+            font-size: 1.9rem;
             font-weight: 700;
             color: var(--accent);
             letter-spacing: -0.5px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+            text-shadow: 0 0 30px rgba(217,252,237,0.2);
         }
 
         .panel-left h2 {
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             color: var(--text-dim);
             font-weight: 400;
-            margin-bottom: 40px;
+            margin-bottom: 36px;
+            line-height: 1.6;
         }
-
         .panel-left h2 a {
             color: var(--highlight);
-            text-decoration: none;
-            border-bottom: 1px dashed var(--highlight);
-            transition: color 0.2s ease, border-color 0.2s ease;
+            border-bottom: 1px dashed rgba(171,210,250,0.4);
+            transition: color 0.2s, border-color 0.2s;
         }
         .panel-left h2 a:hover { color: var(--accent); border-color: var(--accent); }
 
-        /* ---------- form ---------- */
-
-        .input-group { margin-bottom: 20px; }
+        /* ── Inputs ── */
+        .input-group { margin-bottom: 16px; }
 
         .field-label {
             display: block;
-            font-size: 0.7rem;
+            font-size: 0.63rem;
             color: var(--text-dim);
-            margin-bottom: 8px;
-            letter-spacing: 1.5px;
+            margin-bottom: 7px;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
@@ -185,10 +227,9 @@
             align-items: center;
             background: var(--bg-input);
             border: 1px solid var(--border);
-            border-radius: 4px;
-            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 3px;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
         }
-
         .prompt-field:focus-within {
             border-color: var(--accent);
             background: var(--bg-input-focus);
@@ -196,141 +237,186 @@
         }
 
         .prompt-char {
-            padding-left: 16px;
+            padding-left: 14px;
             color: var(--accent-dim);
             font-weight: 700;
+            font-size: 0.9rem;
             user-select: none;
-            transition: color 0.2s ease;
+            transition: color 0.2s;
         }
         .prompt-field:focus-within .prompt-char { color: var(--accent); }
 
         .input-group input {
             flex: 1;
-            width: 100%;
-            height: 46px;
+            height: 44px;
             background: transparent;
-            border: none;
-            outline: none;
-            padding: 0 16px;
+            border: none; outline: none;
+            padding: 0 14px;
             color: var(--text);
             font-family: var(--font);
-            font-size: 0.92rem;
+            font-size: 0.88rem;
         }
-        .input-group input::placeholder { color: #5a5f82; }
+        .input-group input::placeholder { color: #383b58; }
 
+        /* ── Button ── */
         .btn-login {
-            margin-top: 14px;
-            width: 100%;
-            height: 48px;
+            margin-top: 10px;
+            width: 100%; height: 46px;
             background: transparent;
             border: 1px solid var(--accent-dim);
-            border-radius: 4px;
+            border-radius: 3px;
             color: var(--accent);
             font-family: var(--font);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
-        .btn-login:hover {
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
             background: var(--accent);
-            color: #1a1f3a;
-            box-shadow: 0 0 24px var(--accent-glow);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.25s ease;
+            z-index: 0;
         }
+        .btn-login:hover::before { transform: scaleX(1); }
+        .btn-login:hover { color: #0c1410; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+        .btn-login span { position: relative; z-index: 1; }
         .btn-login:active { transform: translateY(1px); }
+        .btn-login:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .feedback-msg {
-            margin-top: 18px;
-            font-size: 0.8rem;
+            margin-top: 16px;
+            font-size: 0.75rem;
             min-height: 1.2em;
             color: var(--text-dim);
         }
 
-        /* ---------- right panel ---------- */
-
+        /* ── Right panel ── */
         .panel-right {
-            width: 42%;
+            width: 40%;
             flex-shrink: 0;
             background: var(--bg-right);
             border-left: 1px solid var(--border);
-            padding: 40px 36px;
+            padding: 36px 32px;
             display: flex;
             flex-direction: column;
-            gap: 22px;
+            gap: 20px;
             overflow-y: auto;
         }
 
+        /* system badge */
+        .sys-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid var(--border-bright);
+            border-radius: 5px;
+            background: rgba(217,252,237,0.03);
+        }
+        .sys-badge-icon {
+            width: 32px; height: 32px;
+            border-radius: 6px;
+            background: rgba(217,252,237,0.06);
+            border: 1px solid var(--border-bright);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; color: var(--accent); flex-shrink: 0;
+        }
+        .sys-badge-text label {
+            display: block; font-size: 0.58rem; letter-spacing: 2px;
+            color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px;
+        }
+        .sys-badge-text span { font-size: 0.72rem; color: var(--accent); font-weight: 700; }
+
+        /* ascii art */
         .ascii-art {
-            font-size: 0.6rem;
-            line-height: 1.15;
-            color: var(--accent);
-            text-shadow: 0 0 8px var(--accent-glow);
+            font-size: 0.52rem;
+            line-height: 1.2;
+            color: rgba(217,252,237,0.35);
+            text-shadow: 0 0 10px var(--accent-glow-2);
             white-space: pre;
             text-align: center;
+            letter-spacing: 1px;
         }
 
-        .motd { display: flex; flex-direction: column; gap: 2px; }
-
+        /* motd */
+        .motd { display: flex; flex-direction: column; gap: 0; }
         .motd-line {
-            font-size: 0.78rem;
+            font-size: 0.7rem;
             color: var(--text-dim);
-            line-height: 1.7;
+            line-height: 1.8;
             opacity: 0;
-            animation: fadeIn 0.4s ease forwards;
+            animation: fadeSlide 0.35s ease forwards;
         }
-        .motd-line.heading { color: var(--accent); font-weight: 700; }
-        .motd-line:nth-child(1) { animation-delay: 0.1s; }
-        .motd-line:nth-child(2) { animation-delay: 0.3s; }
-        .motd-line:nth-child(3) { animation-delay: 0.5s; }
-        .motd-line:nth-child(4) { animation-delay: 0.7s; }
-        .motd-line:nth-child(5) { animation-delay: 0.9s; }
+        .motd-line.mh { color: var(--accent); font-weight: 700; }
+        .motd-line:nth-child(1) { animation-delay: 0.05s; }
+        .motd-line:nth-child(2) { animation-delay: 0.18s; }
+        .motd-line:nth-child(3) { animation-delay: 0.31s; }
+        .motd-line:nth-child(4) { animation-delay: 0.44s; }
+        .motd-line:nth-child(5) { animation-delay: 0.57s; }
 
-        .status-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 0.78rem;
-            margin-top: auto;
+        /* status list */
+        .status-section { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+        .status-row {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 0.7rem; color: var(--text-dim);
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
-        .status-item { display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
-        .status-value { margin-left: auto; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .dot-on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-        .dot-pending {
+        .status-row:last-of-type { border-bottom: none; }
+        .s-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .s-on  { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+        .s-pend {
             background: var(--highlight);
             box-shadow: 0 0 6px var(--highlight);
-            animation: pulse 1.4s ease-in-out infinite;
+            animation: pulse 1.6s ease-in-out infinite;
         }
+        .status-row .s-val { margin-left: auto; color: var(--text); font-size: 0.68rem; }
 
-        .cursor-line { font-size: 0.8rem; color: var(--text-dim); }
-        .cursor { color: var(--accent); animation: blink 1s steps(1) infinite; }
+        /* cursor line */
+        .cursor-line {
+            font-size: 0.72rem; color: var(--text-dim);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .cursor-block {
+            display: inline-block; width: 8px; height: 14px;
+            background: var(--accent);
+            animation: blink 1s steps(1) infinite;
+            box-shadow: 0 0 6px var(--accent);
+        }
 
         .dev-credit {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: var(--text-dim);
-            text-decoration: none;
-            border-bottom: 1px dotted transparent;
             align-self: flex-start;
-            transition: color 0.2s ease, border-color 0.2s ease;
+            border-bottom: 1px dotted transparent;
+            transition: color 0.2s, border-color 0.2s;
         }
-        .dev-credit:hover { color: var(--highlight); border-bottom-color: var(--highlight); }
+        .dev-credit:hover { color: var(--highlight); border-color: var(--highlight); }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-        @keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* ── Animations ── */
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        @keyframes blink { 0%,50%{opacity:1;} 50.01%,100%{opacity:0;} }
+        @keyframes fadeSlide {
+            from { opacity:0; transform: translateX(-6px); }
+            to   { opacity:1; transform: translateX(0); }
         }
 
+        /* ── Responsive ── */
         @media (max-width: 760px) {
-            html, body { height: auto; }
-            body { overflow: auto; padding: 24px 0; }
-            .terminal-window { width: 95vw; height: auto; max-height: none; }
+            html, body { height: auto; overflow: auto; padding: 20px 0; }
+            .terminal-window { width: 95vw; height: auto; max-height: none; border-radius: 8px; }
             .wrapper { flex-direction: column; }
             .panel-right { width: 100%; border-left: none; border-top: 1px solid var(--border); }
-            .panel-left { padding: 36px 28px; }
-            .ascii-art { font-size: 0.5rem; }
+            .panel-left { padding: 32px 24px; }
+            .ascii-art { font-size: 0.42rem; }
         }
     </style>
 </head>
@@ -338,138 +424,203 @@
 
 <div class="terminal-window">
 
+    <!-- Title bar -->
     <div class="title-bar">
         <div class="tb-buttons">
             <span class="tb-dot tb-close"></span>
             <span class="tb-dot tb-min"></span>
             <span class="tb-dot tb-max"></span>
         </div>
-        <div class="title-bar-text">root@auth-gateway: ~/sessions/login</div>
-        <div class="title-bar-status"><span class="status-dot"></span> TLS 1.3</div>
+        <div class="title-bar-text">root@rota-segura — auth-gateway ~/sessions/admin</div>
+        <div class="title-bar-right">
+            <span class="tb-clock" id="tbClock">--:--:--</span>
+            <span class="tb-status"><span class="tb-status-dot"></span>TLS 1.3</span>
+        </div>
     </div>
 
     <div class="wrapper">
 
+        <!-- Left: form -->
         <div class="panel-left">
-            <p class="prompt-path"><span>~/auth</span> $</p>
-            <h1>./login.sh</h1>
-            <h2># sem conta? solicite atraves do telegram <a href="https://t.me/castlesec">./xdg-open.sh</a></h2>
+            <p class="prompt-path">
+                <span class="pp-dir">~/sessions</span>
+                <span class="pp-sep">/</span>
+                <span class="pp-file">admin</span>
+                <span class="pp-sep">&nbsp;$</span>
+            </p>
 
-            <form id="loginForm">
+            <h1>./auth --login</h1>
+            <h2>
+                # Acesso restrito ao painel administrativo.<br>
+                # Solicite credenciais via <a href="https://t.me/castlesec" target="_blank" rel="noopener">t.me/castlesec</a>
+            </h2>
+
+            <form id="loginForm" autocomplete="off">
                 <div class="input-group">
-                    <label class="field-label">--email</label>
+                    <label class="field-label" for="email">--user / e-mail</label>
                     <div class="prompt-field">
                         <span class="prompt-char">$</span>
-                        <input type="email" id="email" name="email" placeholder="usuario@dominio.com" required>
+                        <input type="email" id="email" name="email"
+                               placeholder="usuario@dominio.com" required autocomplete="username">
                     </div>
                 </div>
                 <div class="input-group">
-                    <label class="field-label">--senha</label>
+                    <label class="field-label" for="password">--pass / senha</label>
                     <div class="prompt-field">
                         <span class="prompt-char">$</span>
-                        <input type="password" id="password" name="password" placeholder="••••••••••" required>
+                        <input type="password" id="password" name="password"
+                               placeholder="••••••••••••" required autocomplete="current-password">
                     </div>
                 </div>
-                <button class="btn-login" type="submit">[ EXECUTAR LOGIN ]</button>
+                <button class="btn-login" id="btnLogin" type="submit">
+                    <span>[ EXECUTAR LOGIN ]</span>
+                </button>
             </form>
 
             <div id="feedback" class="feedback-msg"></div>
         </div>
 
+        <!-- Right: system info -->
         <div class="panel-right">
-<pre class="ascii-art">        ▄▄▄▄▄▄▄
-      ▄█       █▄
-     ██         ██
-     ██         ██
-  ▄▄▄██▄▄▄▄▄▄▄▄▄██▄▄▄
- █████████████████████
- ██                 ██
- ██    ▄▄▄▄▄▄▄▄▄    ██
- ██    █       █    ██
- ██    █▄▄▄▄▄▄▄█     ██
- ██        █        ██
- █████████████████████</pre>
+
+            <div class="sys-badge">
+                <div class="sys-badge-icon">⬡</div>
+                <div class="sys-badge-text">
+                    <label>Sistema</label>
+                    <span>Rota Segura v1.0</span>
+                </div>
+            </div>
+
+<pre class="ascii-art">
+ ██████╗  ██████╗ ████████╗ █████╗
+ ██╔══██╗██╔═══██╗╚══██╔══╝██╔══██╗
+ ██████╔╝██║   ██║   ██║   ███████║
+ ██╔══██╗██║   ██║   ██║   ██╔══██║
+ ██║  ██║╚██████╔╝   ██║   ██║  ██║
+ ╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝
+  SEGURA :: auth-gateway :: admin
+</pre>
 
             <div class="motd">
-                <p class="motd-line heading">root@auth-gateway:~$ cat /etc/motd</p>
-                <p class="motd-line">================================</p>
-                <p class="motd-line">  ACESSO RESTRITO</p>
-                <p class="motd-line">  Conexão monitorada e registrada</p>
-                <p class="motd-line">================================</p>
+                <p class="motd-line mh">root@rota-segura:~$ cat /etc/motd</p>
+                <p class="motd-line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+                <p class="motd-line">  ⚠  ACESSO RESTRITO AO STAFF</p>
+                <p class="motd-line">  Sessão monitorada e auditada</p>
+                <p class="motd-line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
             </div>
 
-            <div class="status-list">
-                <div class="status-item">
-                    <span class="dot dot-on"></span>
+            <div class="status-section">
+                <div class="status-row">
+                    <span class="s-dot s-on"></span>
                     <span>FIREWALL</span>
-                    <span class="status-value">ATIVO</span>
+                    <span class="s-val">ATIVO</span>
                 </div>
-                <div class="status-item">
-                    <span class="dot dot-on"></span>
-                    <span>VPN TUNNEL</span>
-                    <span class="status-value">CONECTADO</span>
+                <div class="status-row">
+                    <span class="s-dot s-on"></span>
+                    <span>SUPABASE DB</span>
+                    <span class="s-val">ONLINE</span>
                 </div>
-                <div class="status-item">
-                    <span class="dot dot-pending"></span>
+                <div class="status-row">
+                    <span class="s-dot s-on"></span>
+                    <span>GPS REALTIME</span>
+                    <span class="s-val">PRONTO</span>
+                </div>
+                <div class="status-row">
+                    <span class="s-dot s-pend"></span>
                     <span>SESSÃO</span>
-                    <span class="status-value">AGUARDANDO</span>
+                    <span class="s-val">AGUARDANDO</span>
                 </div>
             </div>
 
-            <p class="cursor-line">root@auth-gateway:~$ <span class="cursor">_</span></p>
-            <a class="dev-credit" href="https://github.com/castlesteinsecurity" target="_blank" rel="noopener"># dev: FrankenSteinSecurity</a>
-        </div>
+            <div class="cursor-line">
+                root@rota-segura:~$&nbsp;<span class="cursor-block"></span>
+            </div>
 
+            <a class="dev-credit" href="https://github.com/castlesteinsecurity"
+               target="_blank" rel="noopener"># dev: CastlesteinSecurity</a>
+
+        </div>
     </div>
 </div>
 
 <script>
-    // 1. Credenciais Supabase (URL corrigida para o projeto correto)
-    const SUPABASE_URL = "https://bfeaukfyvgvkkrjjofbk.supabase.co";
+    const SUPABASE_URL      = "https://siqrztzyikunnxmzvjez.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpcXJ6dHp5aWt1bm54bXp2amV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjU2NDAsImV4cCI6MjA5NzkwMTY0MH0.3VprUH7MqrZol5dzaPUL_B1Hrd-hlhxUqH-xLaX-c34";
 
-    // 2. Inicializa o cliente do Supabase
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 1. Configuração com persistência de sessão garantida
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage
+        }
+    });
 
     const feedback = document.getElementById('feedback');
+    const btnLogin = document.getElementById('btnLogin');
 
-    // 3. Helper para escrever mensagens em formato de log
+    /* ── Live clock ── */
+    const clockEl = document.getElementById('tbClock');
+    const tick = () => {
+        clockEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    };
+    tick(); setInterval(tick, 1000);
+
+    /* ── Log helper ── */
     function logLine(level, message) {
-        const styles = {
-            info:  { color: 'var(--text-dim)', tag: '[INFO]' },
-            ok:    { color: 'var(--accent)',    tag: '[ OK ]' },
-            error: { color: 'var(--red)',      tag: '[ERRO]' }
+        const map = {
+            info:  { color: 'var(--text-dim)', tag: '[INFO ]' },
+            ok:    { color: 'var(--accent)',   tag: '[ OK  ]' },
+            error: { color: 'var(--red)',      tag: '[ERRO ]' },
         };
-        const s = styles[level] || styles.info;
+        const s = map[level] || map.info;
         feedback.style.color = s.color;
-        feedback.innerText = `${s.tag} ${message}`;
+        feedback.textContent = `${s.tag} ${message}`;
     }
 
-    // 4. Captura o envio do formulário
+    /* ── Submit ── */
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = document.getElementById('email').value;
+        const email    = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
 
-        logLine('info', 'verificando credenciais...');
+        btnLogin.disabled = true;
+        logLine('info', 'autenticando...');
 
-        // 5. Tentativa de login no Supabase
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password,
-        });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-        // 6. Trata a resposta
         if (error) {
             logLine('error', error.message);
-        } else {
-            logLine('ok', 'autenticado. redirecionando para ./dashboard...');
-
-            setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 1500);
+            btnLogin.disabled = false;
+            return;
         }
+
+        // 2. Garante que a sessão foi registrada no cliente do Supabase antes de prosseguir
+        await supabaseClient.auth.setSession(data.session);
+
+        /* Verifica role na tabela profiles */
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('role, display_name')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+        const role = (profile?.role || '').toLowerCase();
+        let targetPage = 'dashboard.html';
+
+        if (['aluno', 'responsavel', 'motorista'].includes(role)) {
+            targetPage = 'dashboard-user.html';
+            logLine('ok', 'sessão iniciada. redirecionando para portal...');
+        } else {
+            logLine('ok', 'acesso autorizado. carregando painel...');
+        }
+
+        // Redireciona após pequeno delay visual
+        setTimeout(() => { 
+            window.location.href = targetPage; 
+        }, 1000);
     });
 </script>
 </body>
